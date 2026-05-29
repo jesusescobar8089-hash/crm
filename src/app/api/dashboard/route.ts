@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { formatCOP } from '@/lib/format'
 
 export async function GET() {
   try {

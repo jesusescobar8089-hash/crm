@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { EstadoCliente, TipoNegocio } from '@/types'
-import { ESTADO_CLIENTE_LABELS, ESTADO_COTIZACION_LABELS as _ESTADO_COTIZACION_LABELS } from '@/types'
+import { ESTADO_CLIENTE_LABELS } from '@/types'
 
 const clienteSchema = z.object({
   nombre: z.string().min(1, 'El nombre es obligatorio'),

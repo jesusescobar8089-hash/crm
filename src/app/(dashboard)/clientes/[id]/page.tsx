@@ -879,7 +879,7 @@ export default function ClienteDetallePage() {
         title="Eliminar Cliente"
         description="¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer y se eliminarán todas las interacciones, monitoreos y cotizaciones asociadas."
         onConfirm={handleDelete}
-        destructive
+        variant="destructive"
       />
 
       {/* Document Upload Dialog */}
