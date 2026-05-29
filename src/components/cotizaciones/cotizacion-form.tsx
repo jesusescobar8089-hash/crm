@@ -51,6 +51,7 @@ interface CotizacionFormData {
 interface CotizacionFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  defaultClienteId?: string
   cotizacion?: {
     id: string
     clienteId: string
@@ -76,7 +77,7 @@ const emptyForm: CotizacionFormData = {
   items: [{ descripcion: '', cantidad: 1, precioUnit: 0 }],
 }
 
-export function CotizacionForm({ open, onOpenChange, cotizacion, onSuccess }: CotizacionFormProps) {
+export function CotizacionForm({ open, onOpenChange, defaultClienteId, cotizacion, onSuccess }: CotizacionFormProps) {
   const { user } = useAuthStore()
   const [clientes, setClientes] = useState<ClienteOption[]>([])
   const [loading, setLoading] = useState(false)
@@ -103,10 +104,13 @@ export function CotizacionForm({ open, onOpenChange, cotizacion, onSuccess }: Co
           })),
         })
       } else {
-        setForm(emptyForm)
+        setForm({
+          ...emptyForm,
+          clienteId: defaultClienteId || '',
+        })
       }
     }
-  }, [open, cotizacion])
+  }, [open, cotizacion, defaultClienteId])
 
   const fetchClientes = async () => {
     try {
@@ -220,6 +224,7 @@ export function CotizacionForm({ open, onOpenChange, cotizacion, onSuccess }: Co
               <Select
                 value={form.clienteId}
                 onValueChange={(value) => setForm({ ...form, clienteId: value })}
+                disabled={!!defaultClienteId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar cliente" />

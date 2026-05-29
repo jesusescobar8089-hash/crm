@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import Link from 'next/link'
 import {
   Users,
   Wrench,
@@ -196,7 +197,8 @@ export default function DashboardPage() {
                     </h4>
                     <div className="space-y-1.5">
                       {alerts.clientesSinActividad.map((c) => (
-                        <div key={c.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50">
+                        <Link key={c.id} href={`/clientes/${c.id}`}
+                          className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{c.nombre}</span>
                             <StatusBadge type="cliente" value={c.estado} />
@@ -204,7 +206,7 @@ export default function DashboardPage() {
                           <span className="text-muted-foreground text-xs">
                             Última interacción: {c.interacciones[0] ? formatFecha(c.interacciones[0].fecha) : 'Sin registros'}
                           </span>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -221,7 +223,8 @@ export default function DashboardPage() {
                       {alerts.monitoreosMantenimiento.map((m) => {
                         const isOverdue = m.proximoMantenimiento && new Date(m.proximoMantenimiento) < new Date()
                         return (
-                          <div key={m.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50">
+                          <Link key={m.id} href="/monitoreos"
+                            className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
                             <div className="flex items-center gap-2">
                               <Badge variant={isOverdue ? 'destructive' : 'secondary'} className="text-xs">
                                 {isOverdue ? 'Vencido' : 'Próximo'}
@@ -232,7 +235,7 @@ export default function DashboardPage() {
                             <span className="text-muted-foreground text-xs">
                               {m.proximoMantenimiento ? formatFecha(m.proximoMantenimiento) : 'Sin fecha'}
                             </span>
-                          </div>
+                          </Link>
                         )
                       })}
                     </div>
@@ -248,12 +251,13 @@ export default function DashboardPage() {
                     </h4>
                     <div className="space-y-1.5">
                       {alerts.inventarioBajo.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50">
+                        <Link key={item.id} href="/inventario"
+                          className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
                           <span className="font-medium">{item.nombre}</span>
                           <span className="text-red-600 dark:text-red-400 text-xs font-medium">
                             {item.stockActual} / {item.stockMinimo} {item.unidad}
                           </span>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -268,7 +272,8 @@ export default function DashboardPage() {
                     </h4>
                     <div className="space-y-1.5">
                       {alerts.tareasVencidas.map((t) => (
-                        <div key={t.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50">
+                        <Link key={t.id} href="/tareas"
+                          className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{t.titulo}</span>
                             {t.cliente && (
@@ -278,7 +283,7 @@ export default function DashboardPage() {
                           <span className="text-red-600 dark:text-red-400 text-xs">
                             Vencida: {t.fechaLimite ? formatFecha(t.fechaLimite) : 'Sin fecha'}
                           </span>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>

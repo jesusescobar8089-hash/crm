@@ -24,6 +24,7 @@ import {
   Calendar,
   Upload,
   Download,
+  Plus,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -45,6 +46,7 @@ import {
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ClienteForm } from '@/components/clientes/cliente-form'
 import { InteraccionForm } from '@/components/clientes/interaccion-form'
+import { CotizacionForm } from '@/components/cotizaciones/cotizacion-form'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { DocumentoUploader } from '@/components/documentos/documento-uploader'
 import { useAuthStore } from '@/lib/auth-store'
@@ -193,6 +195,7 @@ export default function ClienteDetallePage() {
   const [estadoDialogOpen, setEstadoDialogOpen] = useState(false)
   const [nuevoEstado, setNuevoEstado] = useState<string>('')
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [cotizacionOpen, setCotizacionOpen] = useState(false)
 
   const socio = useMemo(() => {
     if (!user?.email) return 'socioA'
@@ -406,6 +409,10 @@ export default function ClienteDetallePage() {
                 <CardTitle className="text-base">Cotizaciones</CardTitle>
                 <CardDescription>{cliente.cotizaciones.length} cotización(es) registrada(s)</CardDescription>
               </div>
+              <Button size="sm" onClick={() => setCotizacionOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Cotización
+              </Button>
             </CardHeader>
             <CardContent>
               {cliente.cotizaciones.length > 0 ? (
@@ -882,6 +889,17 @@ export default function ClienteDetallePage() {
         defaultClienteId={cliente.id}
         onSuccess={() => {
           setUploadOpen(false)
+          refetch()
+        }}
+      />
+
+      {/* Nueva Cotización Dialog */}
+      <CotizacionForm
+        open={cotizacionOpen}
+        onOpenChange={setCotizacionOpen}
+        defaultClienteId={cliente.id}
+        onSuccess={() => {
+          setCotizacionOpen(false)
           refetch()
         }}
       />
