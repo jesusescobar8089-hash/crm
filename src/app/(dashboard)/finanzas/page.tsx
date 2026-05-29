@@ -44,6 +44,7 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   Search,
+  Calendar,
 } from 'lucide-react'
 import {
   BarChart,
@@ -89,6 +90,11 @@ const SOCIOS_LABELS: Record<string, string> = {
   socioB: 'María López',
 }
 
+const NOMBRES_MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
+
 const CHART_COLORS = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1']
 
 interface ResumenData {
@@ -122,12 +128,17 @@ interface Transaccion {
 
 export default function FinanzasPage() {
   const { user } = useAuthStore()
+  const currentDate = new Date()
   const [activeTab, setActiveTab] = useState('resumen')
   const [resumen, setResumen] = useState<ResumenData | null>(null)
   const [ingresos, setIngresos] = useState<Transaccion[]>([])
   const [gastos, setGastos] = useState<Transaccion[]>([])
   const [aportes, setAportes] = useState<Transaccion[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Period filter
+  const [mesFiltro, setMesFiltro] = useState(currentDate.getMonth() + 1)
+  const [anioFiltro, setAnioFiltro] = useState(currentDate.getFullYear())
 
   // Transaction form
   const [transaccionFormOpen, setTransaccionFormOpen] = useState(false)
@@ -137,13 +148,13 @@ export default function FinanzasPage() {
   const [deleteDialog, setDeleteDialog] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Transaccion | null>(null)
 
-  // Filters
+  // Text filters (client-side, on top of server-filtered data)
   const [ingresoSearch, setIngresoSearch] = useState('')
   const [gastoSearch, setGastoSearch] = useState('')
 
   const fetchResumen = useCallback(async () => {
     try {
-      const res = await fetch('/api/finanzas?tipo=resumen')
+      const res = await fetch(`/api/finanzas?tipo=resumen&mes=${mesFiltro}&anio=${anioFiltro}`)
       if (res.ok) {
         const data = await res.json()
         setResumen(data)
@@ -151,11 +162,11 @@ export default function FinanzasPage() {
     } catch {
       toast.error('Error al cargar resumen')
     }
-  }, [])
+  }, [mesFiltro, anioFiltro])
 
   const fetchIngresos = useCallback(async () => {
     try {
-      const res = await fetch('/api/finanzas?tipo=ingresos')
+      const res = await fetch(`/api/finanzas?tipo=ingresos&mes=${mesFiltro}&anio=${anioFiltro}`)
       if (res.ok) {
         const data = await res.json()
         setIngresos(data)
@@ -163,11 +174,11 @@ export default function FinanzasPage() {
     } catch {
       toast.error('Error al cargar ingresos')
     }
-  }, [])
+  }, [mesFiltro, anioFiltro])
 
   const fetchGastos = useCallback(async () => {
     try {
-      const res = await fetch('/api/finanzas?tipo=gastos')
+      const res = await fetch(`/api/finanzas?tipo=gastos&mes=${mesFiltro}&anio=${anioFiltro}`)
       if (res.ok) {
         const data = await res.json()
         setGastos(data)
@@ -175,7 +186,7 @@ export default function FinanzasPage() {
     } catch {
       toast.error('Error al cargar gastos')
     }
-  }, [])
+  }, [mesFiltro, anioFiltro])
 
   const fetchAportes = useCallback(async () => {
     try {
@@ -192,10 +203,7 @@ export default function FinanzasPage() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
-      await fetchResumen()
-      await fetchIngresos()
-      await fetchGastos()
-      await fetchAportes()
+      await Promise.all([fetchResumen(), fetchIngresos(), fetchGastos(), fetchAportes()])
       setLoading(false)
     }
     loadData()
@@ -211,7 +219,6 @@ export default function FinanzasPage() {
       toast.success('Transacción eliminada')
       setDeleteDialog(false)
       setDeleteTarget(null)
-      // Refresh all data
       fetchResumen()
       fetchIngresos()
       fetchGastos()
@@ -265,6 +272,53 @@ export default function FinanzasPage() {
         </Button>
       </div>
 
+      {/* Period Selector */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground font-medium">Período:</span>
+
+            <Select value={String(mesFiltro)} onValueChange={(v) => setMesFiltro(Number(v))}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {NOMBRES_MESES.map((mes, i) => (
+                  <SelectItem key={i + 1} value={String(i + 1)}>{mes}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={String(anioFiltro)} onValueChange={(v) => setAnioFiltro(Number(v))}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[2024, 2025, 2026, 2027, 2028].map(anio => (
+                  <SelectItem key={anio} value={String(anio)}>{anio}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setMesFiltro(currentDate.getMonth() + 1)
+                setAnioFiltro(currentDate.getFullYear())
+              }}
+            >
+              Hoy
+            </Button>
+
+            <span className="text-sm font-semibold ml-2">
+              {NOMBRES_MESES[mesFiltro - 1]} {anioFiltro}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
@@ -282,7 +336,7 @@ export default function FinanzasPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-emerald-500" />
-                  <span className="text-sm text-muted-foreground">Ingresos del Mes</span>
+                  <span className="text-sm text-muted-foreground">Ingresos — {NOMBRES_MESES[mesFiltro - 1]}</span>
                 </div>
                 <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                   {formatCOP(resumen.ingresosMes)}
@@ -293,7 +347,7 @@ export default function FinanzasPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-red-500" />
-                  <span className="text-sm text-muted-foreground">Gastos del Mes</span>
+                  <span className="text-sm text-muted-foreground">Gastos — {NOMBRES_MESES[mesFiltro - 1]}</span>
                 </div>
                 <p className="text-xl font-bold text-red-600 dark:text-red-400 mt-1">
                   {formatCOP(resumen.gastosMes)}
@@ -304,7 +358,7 @@ export default function FinanzasPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4 text-sky-500" />
-                  <span className="text-sm text-muted-foreground">Utilidad del Mes</span>
+                  <span className="text-sm text-muted-foreground">Utilidad — {NOMBRES_MESES[mesFiltro - 1]}</span>
                 </div>
                 <p className={`text-xl font-bold mt-1 ${resumen.utilidadMes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                   {formatCOP(resumen.utilidadMes)}
@@ -313,7 +367,7 @@ export default function FinanzasPage() {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <span className="text-sm text-muted-foreground">Ingresos del Año</span>
+                <span className="text-sm text-muted-foreground">Ingresos del Año {anioFiltro}</span>
                 <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                   {formatCOP(resumen.ingresosAnio)}
                 </p>
@@ -321,7 +375,7 @@ export default function FinanzasPage() {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <span className="text-sm text-muted-foreground">Gastos del Año</span>
+                <span className="text-sm text-muted-foreground">Gastos del Año {anioFiltro}</span>
                 <p className="text-lg font-bold text-red-600 dark:text-red-400 mt-1">
                   {formatCOP(resumen.gastosAnio)}
                 </p>
@@ -329,7 +383,7 @@ export default function FinanzasPage() {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <span className="text-sm text-muted-foreground">Utilidad del Año</span>
+                <span className="text-sm text-muted-foreground">Utilidad del Año {anioFiltro}</span>
                 <p className={`text-lg font-bold mt-1 ${resumen.utilidadAnio >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                   {formatCOP(resumen.utilidadAnio)}
                 </p>
@@ -377,7 +431,6 @@ export default function FinanzasPage() {
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Bar Chart: Ingresos vs Gastos por mes */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Ingresos vs Gastos por Mes</CardTitle>
@@ -407,7 +460,6 @@ export default function FinanzasPage() {
               </CardContent>
             </Card>
 
-            {/* Pie Chart: Gastos por categoría */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Gastos por Categoría</CardTitle>
@@ -438,14 +490,13 @@ export default function FinanzasPage() {
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                      Sin datos de gastos
+                      Sin datos de gastos para este período
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Pie Chart: Ingresos por categoría */}
             <Card className="lg:col-span-2">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Ingresos por Categoría</CardTitle>
@@ -476,7 +527,7 @@ export default function FinanzasPage() {
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                      Sin datos de ingresos
+                      Sin datos de ingresos para este período
                     </div>
                   )}
                 </div>
@@ -521,7 +572,7 @@ export default function FinanzasPage() {
                 {filteredIngresos.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                      No se encontraron ingresos
+                      No se encontraron ingresos para {NOMBRES_MESES[mesFiltro - 1]} {anioFiltro}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -607,7 +658,7 @@ export default function FinanzasPage() {
                 {filteredGastos.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                      No se encontraron gastos
+                      No se encontraron gastos para {NOMBRES_MESES[mesFiltro - 1]} {anioFiltro}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -746,7 +797,6 @@ export default function FinanzasPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Transaction Form Dialog */}
       <TransaccionForm
         open={transaccionFormOpen}
         onOpenChange={setTransaccionFormOpen}
@@ -754,7 +804,6 @@ export default function FinanzasPage() {
         onSuccess={onFormSuccess}
       />
 
-      {/* Delete Confirm */}
       <ConfirmDialog
         open={deleteDialog}
         onOpenChange={setDeleteDialog}

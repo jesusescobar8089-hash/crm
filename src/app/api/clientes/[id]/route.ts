@@ -23,6 +23,11 @@ export async function GET(
         transacciones: { orderBy: { fecha: 'desc' } },
         tareas: { orderBy: { createdAt: 'desc' } },
         documentos: { orderBy: { createdAt: 'desc' } },
+        movimientosInventario: {
+          where: { tipo: { in: ['SALIDA_INSTALACION', 'SALIDA_VENTA'] } },
+          include: { item: { select: { id: true, nombre: true, categoria: true, unidad: true, costoUnitario: true } } },
+          orderBy: { fecha: 'desc' },
+        },
       },
     })
 

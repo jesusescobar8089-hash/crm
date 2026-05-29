@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const anio = searchParams.get('anio')
 
     if (tipo === 'resumen') {
-      return await getResumen()
+      return await getResumen(mes, anio)
     }
 
     if (tipo === 'ingresos') {
@@ -31,15 +31,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function getResumen() {
+async function getResumen(mesParam: string | null, anioParam: string | null) {
   const now = new Date()
-  const currentMonth = now.getMonth()
-  const currentYear = now.getFullYear()
+  const currentMonth = mesParam ? Number(mesParam) - 1 : now.getMonth()
+  const currentYear = anioParam ? Number(anioParam) : now.getFullYear()
 
   // Get all transactions
   const allTransactions = await db.transaccion.findMany()
 
-  // Monthly totals
+  // Monthly totals (filtered by selected period)
   const mesTransactions = allTransactions.filter((t) => {
     const d = new Date(t.fecha)
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear
@@ -66,7 +66,7 @@ async function getResumen() {
     .reduce((sum, t) => sum + t.monto, 0)
   const utilidadAnio = ingresosAnio - gastosAnio
 
-  // Balance por socio
+  // Balance por socio (all time)
   const socios = ['socioA', 'socioB']
   const balanceSocios = socios.map((socio) => {
     const aportado = allTransactions
@@ -78,11 +78,10 @@ async function getResumen() {
     return { socio, aportado, retirado, saldo: aportado - retirado }
   })
 
-  // Utilidad dividida 50/50
   const utilidadTotal = utilidadAnio
   const utilidadPorSocio = utilidadTotal / 2
 
-  // Chart: Ingresos vs Gastos por mes (last 12 months)
+  // Chart: Ingresos vs Gastos por mes (last 12 months from selected year)
   const mesesData: { mes: string; ingresos: number; gastos: number }[] = []
   for (let i = 11; i >= 0; i--) {
     const d = new Date(currentYear, currentMonth - i, 1)
@@ -100,22 +99,22 @@ async function getResumen() {
     })
   }
 
-  // Chart: Gastos por categoría
-  const gastosAll = allTransactions.filter((t) => t.tipo === 'GASTO')
+  // Chart: Gastos por categoría (selected month)
+  const gastosMesData = mesTransactions.filter((t) => t.tipo === 'GASTO')
   const gastosCategoria: { categoria: string; monto: number }[] = []
   const catMap: Record<string, number> = {}
-  gastosAll.forEach((t) => {
+  gastosMesData.forEach((t) => {
     catMap[t.categoria] = (catMap[t.categoria] || 0) + t.monto
   })
   Object.entries(catMap).forEach(([categoria, monto]) => {
     gastosCategoria.push({ categoria, monto })
   })
 
-  // Chart: Ingresos por tipo (categoría)
-  const ingresosAll = allTransactions.filter((t) => t.tipo === 'INGRESO')
+  // Chart: Ingresos por categoría (selected month)
+  const ingresosMesData = mesTransactions.filter((t) => t.tipo === 'INGRESO')
   const ingresosCategoria: { categoria: string; monto: number }[] = []
   const ingCatMap: Record<string, number> = {}
-  ingresosAll.forEach((t) => {
+  ingresosMesData.forEach((t) => {
     ingCatMap[t.categoria] = (ingCatMap[t.categoria] || 0) + t.monto
   })
   Object.entries(ingCatMap).forEach(([categoria, monto]) => {
@@ -141,7 +140,7 @@ async function getIngresos(mes: string | null, anio: string | null) {
   const where: Record<string, unknown> = { tipo: 'INGRESO' }
 
   if (mes && anio) {
-    const m = Number(mes)
+    const m = Number(mes) - 1
     const y = Number(anio)
     const startDate = new Date(y, m, 1)
     const endDate = new Date(y, m + 1, 1)
@@ -166,7 +165,7 @@ async function getGastos(mes: string | null, anio: string | null) {
   const where: Record<string, unknown> = { tipo: 'GASTO' }
 
   if (mes && anio) {
-    const m = Number(mes)
+    const m = Number(mes) - 1
     const y = Number(anio)
     const startDate = new Date(y, m, 1)
     const endDate = new Date(y, m + 1, 1)

@@ -47,6 +47,7 @@ interface DocumentoUploaderProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  defaultClienteId?: string
 }
 
 const ACCEPTED_EXTENSIONS = '.pdf,.jpg,.jpeg,.png,.docx,.xlsx'
@@ -60,14 +61,14 @@ function formatFileSize(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
-export function DocumentoUploader({ open, onOpenChange, onSuccess }: DocumentoUploaderProps) {
+export function DocumentoUploader({ open, onOpenChange, onSuccess, defaultClienteId }: DocumentoUploaderProps) {
   const { user } = useAuthStore()
   const [uploading, setUploading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [nombre, setNombre] = useState('')
   const [tipo, setTipo] = useState<string>('')
   const [descripcion, setDescripcion] = useState('')
-  const [clienteId, setClienteId] = useState<string>('')
+  const [clienteId, setClienteId] = useState<string>(defaultClienteId || '')
   const [cotizacionId, setCotizacionId] = useState<string>('')
   const [monitoreoId, setMonitoreoId] = useState<string>('')
   const [fechaDocumento, setFechaDocumento] = useState<string>(
@@ -137,6 +138,13 @@ export function DocumentoUploader({ open, onOpenChange, onSuccess }: DocumentoUp
     setMonitoreoId('')
   }, [clienteId, fetchCotizaciones, fetchMonitoreos])
 
+  // Sync defaultClienteId when it changes
+  useEffect(() => {
+    if (defaultClienteId) {
+      setClienteId(defaultClienteId)
+    }
+  }, [defaultClienteId])
+
   // Auto-fill nombre from file name
   useEffect(() => {
     if (file && !nombre) {
@@ -150,7 +158,7 @@ export function DocumentoUploader({ open, onOpenChange, onSuccess }: DocumentoUp
     setNombre('')
     setTipo('')
     setDescripcion('')
-    setClienteId('')
+    setClienteId(defaultClienteId || '')
     setCotizacionId('')
     setMonitoreoId('')
     setFechaDocumento(new Date().toISOString().split('T')[0])
@@ -322,7 +330,7 @@ export function DocumentoUploader({ open, onOpenChange, onSuccess }: DocumentoUp
           {/* Cliente */}
           <div className="space-y-2">
             <Label>Cliente Asociado</Label>
-            <Select value={clienteId} onValueChange={setClienteId}>
+            <Select value={clienteId} onValueChange={setClienteId} disabled={!!defaultClienteId}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione cliente (opcional)" />
               </SelectTrigger>

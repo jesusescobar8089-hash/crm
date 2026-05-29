@@ -287,7 +287,7 @@ export default function CotizacionDetailPage() {
                 <Copy className="h-4 w-4 mr-2" />
                 Duplicar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast.info('Función de PDF en desarrollo')}>
+              <DropdownMenuItem onClick={() => window.open(`/api/cotizaciones/${id}/pdf`, '_blank')}>
                 <Download className="h-4 w-4 mr-2" />
                 Descargar PDF
               </DropdownMenuItem>
@@ -494,7 +494,7 @@ export default function CotizacionDetailPage() {
               <Button
                 variant="outline"
                 className="w-full justify-start"
-                onClick={() => toast.info('Función de PDF en desarrollo')}
+                onClick={() => window.open(`/api/cotizaciones/${id}/pdf`, '_blank')}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Descargar PDF

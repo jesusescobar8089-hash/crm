@@ -22,6 +22,8 @@ import {
   CheckSquare,
   FolderOpen,
   Calendar,
+  Upload,
+  Download,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -44,9 +46,10 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { ClienteForm } from '@/components/clientes/cliente-form'
 import { InteraccionForm } from '@/components/clientes/interaccion-form'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
+import { DocumentoUploader } from '@/components/documentos/documento-uploader'
 import { useAuthStore } from '@/lib/auth-store'
 import { formatCOP, formatFecha } from '@/lib/format'
-import { ESTADO_CLIENTE_LABELS, type EstadoCliente, ESTADO_COTIZACION_LABELS, ESTADO_MONITOREO_LABELS, ESTADO_TAREA_LABELS, PRIORIDAD_COLORS } from '@/types'
+import { ESTADO_CLIENTE_LABELS, type EstadoCliente, ESTADO_COTIZACION_LABELS, ESTADO_MONITOREO_LABELS, ESTADO_TAREA_LABELS, PRIORIDAD_COLORS, CATEGORIA_INVENTARIO_LABELS } from '@/types'
 
 interface ClienteDetalle {
   id: string
@@ -135,6 +138,21 @@ interface ClienteDetalle {
     socio: string
     fechaDocumento: string | null
   }>
+  movimientosInventario: Array<{
+    id: string
+    tipo: string
+    cantidad: number
+    fecha: string
+    descripcion: string
+    socio: string
+    item: {
+      id: string
+      nombre: string
+      categoria: string
+      unidad: string
+      costoUnitario: number
+    }
+  }>
 }
 
 const TIPOS_NEGOCIO_LABELS: Record<string, string> = {
@@ -174,6 +192,7 @@ export default function ClienteDetallePage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [estadoDialogOpen, setEstadoDialogOpen] = useState(false)
   const [nuevoEstado, setNuevoEstado] = useState<string>('')
+  const [uploadOpen, setUploadOpen] = useState(false)
 
   const socio = useMemo(() => {
     if (!user?.email) return 'socioA'
@@ -485,9 +504,67 @@ export default function ClienteDetallePage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Inventario Asignado</CardTitle>
+              <CardDescription>Kits y materiales usados en instalaciones para este cliente</CardDescription>
             </CardHeader>
             <CardContent>
-              <EmptyState message="Próximamente — Módulo de inventario asignado en desarrollo" />
+              {cliente.movimientosInventario && cliente.movimientosInventario.length > 0 ? (
+                <>
+                  <ScrollArea className="max-h-96">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ítem</TableHead>
+                          <TableHead>Categoría</TableHead>
+                          <TableHead>Cantidad</TableHead>
+                          <TableHead>Tipo Mov.</TableHead>
+                          <TableHead>Fecha</TableHead>
+                          <TableHead>Descripción</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {cliente.movimientosInventario.map((mov) => (
+                          <TableRow key={mov.id}>
+                            <TableCell className="font-medium">{mov.item.nombre}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="border-0 text-xs">
+                                {CATEGORIA_INVENTARIO_LABELS[mov.item.categoria as keyof typeof CATEGORIA_INVENTARIO_LABELS] || mov.item.categoria}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{mov.cantidad} {mov.item.unidad}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="secondary"
+                                className={`border-0 text-xs ${
+                                  mov.tipo === 'SALIDA_INSTALACION'
+                                    ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400'
+                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                                }`}
+                              >
+                                {mov.tipo === 'SALIDA_INSTALACION' ? 'Instalación' : 'Venta'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{formatFecha(mov.fecha)}</TableCell>
+                            <TableCell className="max-w-xs truncate text-muted-foreground">{mov.descripcion}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                  <Separator className="my-4" />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">
+                      Total ítems asignados: {cliente.movimientosInventario.length}
+                    </span>
+                    <span className="text-sm font-medium">
+                      Valor estimado: {formatCOP(
+                        cliente.movimientosInventario.reduce((sum, mov) => sum + (mov.cantidad * mov.item.costoUnitario), 0)
+                      )}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <EmptyState message="No hay ítems de inventario asignados a este cliente aún. Los movimientos de stock vinculados a este cliente aparecerán aquí." />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -692,9 +769,15 @@ export default function ClienteDetallePage() {
         {/* Tab: Documentos */}
         <TabsContent value="documentos">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Documentos</CardTitle>
-              <CardDescription>{cliente.documentos.length} documento(s) registrado(s)</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Documentos</CardTitle>
+                <CardDescription>{cliente.documentos.length} documento(s) registrado(s)</CardDescription>
+              </div>
+              <Button size="sm" onClick={() => setUploadOpen(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Subir Documento
+              </Button>
             </CardHeader>
             <CardContent>
               {cliente.documentos.length > 0 ? (
@@ -706,6 +789,7 @@ export default function ClienteDetallePage() {
                         <TableHead>Tipo</TableHead>
                         <TableHead>Fecha</TableHead>
                         <TableHead>Socio</TableHead>
+                        <TableHead className="w-20"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -715,13 +799,24 @@ export default function ClienteDetallePage() {
                           <TableCell className="capitalize">{doc.tipo.replace(/_/g, ' ').toLowerCase()}</TableCell>
                           <TableCell>{doc.fechaDocumento ? formatFecha(doc.fechaDocumento) : '—'}</TableCell>
                           <TableCell>{doc.socio === 'socioA' ? 'Socio A' : 'Socio B'}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Descargar"
+                              onClick={() => window.open(`/api/documentos/${doc.id}/descargar`, '_blank')}
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </ScrollArea>
               ) : (
-                <EmptyState message="Próximamente — Módulo de documentos en desarrollo" />
+                <EmptyState message="No hay documentos vinculados a este cliente" />
               )}
             </CardContent>
           </Card>
@@ -778,6 +873,17 @@ export default function ClienteDetallePage() {
         description="¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer y se eliminarán todas las interacciones, monitoreos y cotizaciones asociadas."
         onConfirm={handleDelete}
         destructive
+      />
+
+      {/* Document Upload Dialog */}
+      <DocumentoUploader
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        defaultClienteId={cliente.id}
+        onSuccess={() => {
+          setUploadOpen(false)
+          refetch()
+        }}
       />
     </div>
   )
