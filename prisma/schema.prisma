@@ -1,0 +1,200 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String   @unique
+  password  String
+  tema      String   @default("dark")
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Cliente {
+  id               String        @id @default(cuid())
+  nombre           String
+  empresa          String?
+  contactoNombre   String
+  telefono         String
+  email            String?
+  ciudad           String
+  departamento     String
+  tipoNegocio      String
+  estado           String        @default("COTIZADO")
+  socioResponsable String
+  notas            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  interacciones    Interaccion[]
+  monitoreos       Monitoreo[]
+  cotizaciones     Cotizacion[]
+  transacciones    Transaccion[]
+  tareas           Tarea[]
+  documentos       Documento[]
+}
+
+model Interaccion {
+  id            String    @id @default(cuid())
+  clienteId     String
+  cliente       Cliente   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tipo          String
+  descripcion   String
+  fecha         DateTime
+  socio         String
+  proximaAccion String?
+  fechaProxima  DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+model Cotizacion {
+  id               String          @id @default(cuid())
+  numero           String          @unique
+  clienteId        String
+  cliente          Cliente         @relation(fields: [clienteId], references: [id])
+  fechaEmision     DateTime
+  fechaVencimiento DateTime?
+  estado           String          @default("BORRADOR")
+  socio            String
+  descuento        Float           @default(0)
+  iva              Float           @default(19)
+  observaciones    String?
+  notasInternas    String?
+  items            CotizacionItem[]
+  documentos       Documento[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model CotizacionItem {
+  id           String     @id @default(cuid())
+  cotizacionId String
+  cotizacion   Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  descripcion  String
+  cantidad     Float
+  precioUnit   Float
+  subtotal     Float
+  orden        Int        @default(0)
+}
+
+model Monitoreo {
+  id                      String          @id @default(cuid())
+  clienteId               String
+  cliente                 Cliente         @relation(fields: [clienteId], references: [id])
+  kitId                   String?
+  fechaInstalacion        DateTime
+  frecuenciaMantenimiento Int
+  ultimoMantenimiento     DateTime?
+  proximoMantenimiento    DateTime?
+  estado                  String          @default("ACTIVO")
+  observaciones           String?
+  mantenimientos          Mantenimiento[]
+  documentos              Documento[]
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+}
+
+model Mantenimiento {
+  id            String     @id @default(cuid())
+  monitoreoId   String
+  monitoreo     Monitoreo  @relation(fields: [monitoreoId], references: [id], onDelete: Cascade)
+  fecha         DateTime
+  socio         String
+  descripcion   String
+  observaciones String?
+  createdAt     DateTime   @default(now())
+}
+
+model InventarioItem {
+  id            String            @id @default(cuid())
+  nombre        String
+  categoria     String
+  unidad        String
+  stockActual   Float             @default(0)
+  stockMinimo   Float             @default(0)
+  costoUnitario Float             @default(0)
+  proveedor     String?
+  notas         String?
+  movimientos   MovimientoStock[]
+  createdAt     DateTime          @default(now())
+}
+
+model MovimientoStock {
+  id          String         @id @default(cuid())
+  itemId      String
+  item        InventarioItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tipo        String
+  cantidad    Float
+  costo       Float?
+  proveedor   String?
+  clienteId   String?
+  descripcion String
+  socio       String
+  fecha       DateTime
+  createdAt   DateTime       @default(now())
+}
+
+model Transaccion {
+  id           String    @id @default(cuid())
+  tipo         String
+  categoria    String
+  descripcion  String
+  monto        Float
+  socio        String
+  metodoPago   String?
+  clienteId    String?
+  cliente      Cliente?  @relation(fields: [clienteId], references: [id])
+  cotizacionId String?
+  fecha        DateTime
+  createdAt    DateTime  @default(now())
+}
+
+model Tarea {
+  id          String    @id @default(cuid())
+  titulo      String
+  descripcion String?
+  asignadoA   String
+  prioridad   String
+  fechaLimite DateTime?
+  estado      String    @default("PENDIENTE")
+  clienteId   String?
+  cliente     Cliente?  @relation(fields: [clienteId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Documento {
+  id             String      @id @default(cuid())
+  nombre         String
+  tipo           String
+  descripcion    String?
+  rutaArchivo    String
+  mimeType       String
+  tamañoBytes    Int
+  clienteId      String?
+  cliente        Cliente?    @relation(fields: [clienteId], references: [id])
+  cotizacionId   String?
+  cotizacion     Cotizacion? @relation(fields: [cotizacionId], references: [id])
+  monitoreoId    String?
+  monitoreo      Monitoreo?  @relation(fields: [monitoreoId], references: [id])
+  socio          String
+  fechaDocumento DateTime?
+  tags           String?
+  createdAt      DateTime    @default(now())
+}
+
+model BitacoraEvento {
+  id        String   @id @default(cuid())
+  socio     String
+  modulo    String
+  accion    String
+  entidadId String?
+  detalle   String?
+  createdAt DateTime @default(now())
+}
