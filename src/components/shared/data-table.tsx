@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import {
   ColumnDef,
+  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -41,6 +42,21 @@ interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void
 }
 
+function searchableValue(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value)
+  }
+  if (Array.isArray(value)) {
+    return value.map(searchableValue).join(' ')
+  }
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).map(searchableValue).join(' ')
+  }
+
+  return ''
+}
+
 export function DataTable<TData, TValue>({
   columns,
   data,
@@ -52,6 +68,7 @@ export function DataTable<TData, TValue>({
   onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [filterValue, setFilterValue] = useState<string>('all')
 
@@ -63,9 +80,11 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     state: {
       sorting,
+      columnFilters,
       globalFilter,
     },
     initialState: {
@@ -76,7 +95,7 @@ export function DataTable<TData, TValue>({
       if (!searchKey) {
         // Search across all string columns
         return Object.values(row.original).some((val) =>
-          String(val).toLowerCase().includes(search)
+          searchableValue(val).toLowerCase().includes(search)
         )
       }
       const val = row.getValue(searchKey)
@@ -84,17 +103,20 @@ export function DataTable<TData, TValue>({
     },
   })
 
-  // Apply column filter if filterKey and filterValue are set
-  if (filterKey && filterValue !== 'all') {
-    table.getColumn(filterKey)?.setFilterValue(filterValue)
-  } else if (filterKey) {
-    table.getColumn(filterKey)?.setFilterValue(undefined)
+  const handleFilterChange = (value: string) => {
+    setFilterValue(value)
+    setColumnFilters((current) => {
+      if (!filterKey) return current
+
+      const rest = current.filter((filter) => filter.id !== filterKey)
+      return value === 'all' ? rest : [...rest, { id: filterKey, value }]
+    })
   }
 
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3 rounded-md border bg-muted/20 p-3 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -105,7 +127,7 @@ export function DataTable<TData, TValue>({
           />
         </div>
         {filterKey && filterOptions && (
-          <Select value={filterValue} onValueChange={setFilterValue}>
+          <Select value={filterValue} onValueChange={handleFilterChange}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filtrar" />
             </SelectTrigger>
@@ -122,13 +144,13 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border overflow-hidden">
+      <div className="overflow-hidden rounded-md border bg-card">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="bg-muted/50 text-xs font-semibold uppercase tracking-normal text-muted-foreground">
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -142,7 +164,7 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className={onRowClick ? 'cursor-pointer hover:bg-muted/80' : ''}
+                  className={onRowClick ? 'cursor-pointer hover:bg-muted/60' : 'hover:bg-muted/40'}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -164,7 +186,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2 sm:flex-row">
         <p className="text-sm text-muted-foreground">
           {table.getFilteredRowModel().rows.length} resultado(s) en total
         </p>

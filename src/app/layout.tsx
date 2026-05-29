@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers/query-provider";
+import { PwaRegister } from "@/components/providers/pwa-register";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,9 +18,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AgroEve - Gestión Interna",
-  description: "Sistema de gestión interna para AgroEve - Monitoreo y control de calidad del agua para acuicultura",
+  description: "Sistema de gestión interna para AgroEve: clientes, cotizaciones, inventario, finanzas, documentos y monitoreos.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "AgroEve",
+  appleWebApp: {
+    capable: true,
+    title: "AgroEve",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>",
+    icon: "/logo.svg",
+    apple: "/logo.svg",
   },
 };
 
@@ -31,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider
@@ -39,6 +52,7 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
+          <PwaRegister />
           <Providers>
             {children}
           </Providers>

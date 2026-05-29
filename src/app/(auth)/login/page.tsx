@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Droplets, Mail, Lock, Loader2 } from 'lucide-react'
+import { Droplets, Mail, Lock, Loader2, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/lib/auth-store'
 import { Button } from '@/components/ui/button'
@@ -52,31 +52,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-950 via-sky-900 to-emerald-900 p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-sky-400/5 rounded-full blur-3xl" />
-      </div>
+    <main className="min-h-screen bg-background px-4 py-8 text-foreground">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center gap-10 lg:grid-cols-[1fr_420px]">
+        <section className="hidden lg:block">
+          <div className="max-w-xl space-y-8">
+            <div className="inline-flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-sm text-muted-foreground">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Gestión operativa privada
+            </div>
+            <div className="space-y-4">
+              <h1 className="text-4xl font-semibold tracking-tight text-balance">
+                Control interno claro para clientes, inventario y operaciones.
+              </h1>
+              <p className="max-w-lg text-base leading-7 text-muted-foreground">
+                AgroEve centraliza la actividad comercial y técnica para que cada socio vea qué requiere atención sin ruido.
+              </p>
+            </div>
+            <div className="grid max-w-lg grid-cols-3 gap-3 text-sm">
+              {['Clientes', 'Monitoreos', 'Finanzas'].map((item) => (
+                <div key={item} className="rounded-lg border bg-card p-4">
+                  <p className="font-medium">{item}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">Seguimiento diario</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-      <Card className="w-full max-w-md relative border-sky-200/20 dark:border-sky-800/30 shadow-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
-        <CardHeader className="text-center space-y-4 pb-2">
-          <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500 to-emerald-500 shadow-lg shadow-sky-500/25">
-            <Droplets className="w-9 h-9 text-white" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent">
-              AgroEve
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground mt-1">
-              Sistema de Gestión Interna
-            </CardDescription>
-          </div>
+        <Card className="w-full border bg-card">
+          <CardHeader className="space-y-5 pb-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border bg-background">
+                <Droplets className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold tracking-tight">
+                  AgroEve
+                </CardTitle>
+                <CardDescription className="mt-1 text-sm">
+                  Acceso al sistema interno
+                </CardDescription>
+              </div>
+            </div>
         </CardHeader>
 
-        <CardContent className="pt-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="pt-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
               <div className="relative">
@@ -113,7 +134,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-600 hover:to-emerald-600 text-white shadow-lg shadow-sky-500/25"
+              className="w-full"
               disabled={loading}
             >
               {loading ? (
@@ -127,15 +148,16 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 p-3 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/30">
-            <p className="text-xs text-center text-sky-700 dark:text-sky-400">
-              <strong>Credenciales de prueba:</strong><br />
-              socioA@agroeve.co / agroeve2026<br />
-              socioB@agroeve.co / agroeve2026
+            <div className="mt-6 rounded-lg border bg-muted/30 p-3">
+              <p className="text-xs leading-5 text-muted-foreground">
+                <strong className="font-medium text-foreground">Credenciales de prueba</strong><br />
+                socioA@agroeve.co / agroeve2026<br />
+                socioB@agroeve.co / agroeve2026
             </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
   )
 }

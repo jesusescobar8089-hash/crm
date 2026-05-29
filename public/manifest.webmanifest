@@ -1,0 +1,20 @@
+{
+  "name": "AgroEve Gestion Interna",
+  "short_name": "AgroEve",
+  "description": "Sistema interno para clientes, cotizaciones, inventario, finanzas, documentos y monitoreos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#07111f",
+  "theme_color": "#0284c7",
+  "categories": ["business", "productivity", "finance"],
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

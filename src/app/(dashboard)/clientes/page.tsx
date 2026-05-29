@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
-import { Plus, Users } from 'lucide-react'
+import { Plus, Users, Building2, Handshake, CheckCircle2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -133,32 +133,44 @@ export default function ClientesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="h-6 w-6 text-sky-500" />
-            Clientes
-          </h2>
-          <p className="text-muted-foreground">
-            Gestiona la información de tus clientes
-          </p>
+      <div className="rounded-md border bg-card p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-md bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Clientes</h2>
+              <p className="text-sm text-muted-foreground">
+                Directorio comercial, estado de negociación y responsables.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => setFormOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nuevo Cliente
+          </Button>
         </div>
-        <Button onClick={() => setFormOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nuevo Cliente
-        </Button>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {(['INSTALADO_ACTIVO', 'EN_NEGOCIACION', 'COTIZADO', 'INACTIVO_PERDIDO'] as EstadoCliente[]).map((estado) => {
+        {([
+          ['INSTALADO_ACTIVO', CheckCircle2, 'text-emerald-600', 'bg-emerald-50 dark:bg-emerald-950/30'],
+          ['EN_NEGOCIACION', Handshake, 'text-amber-600', 'bg-amber-50 dark:bg-amber-950/30'],
+          ['COTIZADO', Building2, 'text-sky-600', 'bg-sky-50 dark:bg-sky-950/30'],
+          ['INACTIVO_PERDIDO', XCircle, 'text-red-600', 'bg-red-50 dark:bg-red-950/30'],
+        ] as const).map(([estado, Icon, color, bg]) => {
           const count = clientes.filter((c) => c.estado === estado).length
           return (
-            <Card key={estado} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/clientes?estado=${estado}`)}>
+            <Card key={estado} className="cursor-pointer rounded-md shadow-sm transition-shadow hover:shadow-md" onClick={() => router.push(`/clientes?estado=${estado}`)}>
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">{ESTADO_CLIENTE_LABELS[estado]}</p>
-                <p className="text-2xl font-bold">{count}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-muted-foreground">{ESTADO_CLIENTE_LABELS[estado]}</p>
+                  <span className={`rounded-md p-1.5 ${bg}`}>
+                    <Icon className={`h-4 w-4 ${color}`} />
+                  </span>
+                </div>
+                <p className="mt-2 text-2xl font-semibold">{count}</p>
               </CardContent>
             </Card>
           )
@@ -166,7 +178,7 @@ export default function ClientesPage() {
       </div>
 
       {/* Table */}
-      <Card>
+      <Card className="rounded-md shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Listado de Clientes</CardTitle>
         </CardHeader>

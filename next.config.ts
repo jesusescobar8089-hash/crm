@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@react-pdf/renderer'],
   allowedDevOrigins: [
     '.space-z.ai',
+    '127.0.0.1',
+    'localhost',
   ],
 };
 

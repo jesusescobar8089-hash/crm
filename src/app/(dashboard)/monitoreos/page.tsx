@@ -14,7 +14,7 @@ import {
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -246,18 +246,51 @@ export default function MonitoreosPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Monitoreos</h2>
-          <p className="text-muted-foreground">
-            Gestiona los monitoreos y mantenimientos de equipos
-          </p>
+      <div className="rounded-md border bg-card p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+              <Wrench className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Monitoreos</h2>
+              <p className="text-sm text-muted-foreground">
+                Instalaciones activas, mantenimientos y alertas operativas.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => { setEditMonitoreo(null); setFormOpen(true) }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Monitoreo
+          </Button>
         </div>
-        <Button onClick={() => { setEditMonitoreo(null); setFormOpen(true) }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Monitoreo
-        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Card className="rounded-md shadow-sm">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="mt-2 text-2xl font-semibold">{data.length}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-md shadow-sm">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Activos</p>
+            <p className="mt-2 text-2xl font-semibold text-emerald-600">{data.filter((m) => m.estado === 'ACTIVO').length}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-md shadow-sm">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Próximos 7 días</p>
+            <p className="mt-2 text-2xl font-semibold text-amber-600">{data.filter((m) => isWithinDays(m.proximoMantenimiento, 7)).length}</p>
+          </CardContent>
+        </Card>
+        <Card className="rounded-md shadow-sm">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Vencidos</p>
+            <p className="mt-2 text-2xl font-semibold text-red-600">{data.filter((m) => isOverdue(m.proximoMantenimiento)).length}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Overdue alerts */}
@@ -292,14 +325,21 @@ export default function MonitoreosPage() {
           </Button>
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={data}
-          searchPlaceholder="Buscar por cliente..."
-          filterKey="estado"
-          filterOptions={estadoOptions}
-          pageSize={10}
-        />
+        <Card className="rounded-md shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Listado de Monitoreos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DataTable
+              columns={columns}
+              data={data}
+              searchPlaceholder="Buscar por cliente..."
+              filterKey="estado"
+              filterOptions={estadoOptions}
+              pageSize={10}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Create/Edit Form Dialog */}

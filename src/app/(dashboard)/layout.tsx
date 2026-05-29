@@ -1,6 +1,6 @@
 'use client'
 
-import { useSyncExternalStore, useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
@@ -48,31 +48,31 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-const emptySubscribe = () => () => {}
-
 function useMounted() {
-  return useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  )
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  return mounted
 }
 
 const navItems = [
-  { title: 'Dashboard', href: '/panel', icon: Home, emoji: '🏠' },
-  { title: 'Clientes', href: '/clientes', icon: Users, emoji: '👥' },
-  { title: 'Cotizaciones', href: '/cotizaciones', icon: FileText, emoji: '📄' },
-  { title: 'Monitoreos', href: '/monitoreos', icon: Wrench, emoji: '🔧' },
-  { title: 'Inventario', href: '/inventario', icon: Package, emoji: '📦' },
-  { title: 'Finanzas', href: '/finanzas', icon: DollarSign, emoji: '💰' },
-  { title: 'Documentos', href: '/documentos', icon: FolderOpen, emoji: '🗂️' },
-  { title: 'Tareas', href: '/tareas', icon: CheckSquare, emoji: '✅' },
-  { title: 'Bitácora', href: '/bitacora', icon: ClipboardList, emoji: '📋' },
-  { title: 'Configuración', href: '/configuracion', icon: Settings, emoji: '⚙️' },
+  { title: 'Panel', href: '/panel', icon: Home },
+  { title: 'Clientes', href: '/clientes', icon: Users },
+  { title: 'Cotizaciones', href: '/cotizaciones', icon: FileText },
+  { title: 'Monitoreos', href: '/monitoreos', icon: Wrench },
+  { title: 'Inventario', href: '/inventario', icon: Package },
+  { title: 'Finanzas', href: '/finanzas', icon: DollarSign },
+  { title: 'Documentos', href: '/documentos', icon: FolderOpen },
+  { title: 'Tareas', href: '/tareas', icon: CheckSquare },
+  { title: 'Bitácora', href: '/bitacora', icon: ClipboardList },
+  { title: 'Configuración', href: '/configuracion', icon: Settings },
 ]
 
 function getModuleTitle(pathname: string): string {
-  if (pathname === '/panel') return 'Dashboard'
+  if (pathname === '/panel') return 'Panel'
   const item = navItems.find((n) => n.href !== '/panel' && pathname.startsWith(n.href))
   return item?.title ?? 'Dashboard'
 }
@@ -130,17 +130,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarProvider>
-      <Sidebar variant="sidebar" collapsible="offcanvas">
-        <SidebarHeader className="p-4">
+      <Sidebar variant="sidebar" collapsible="offcanvas" className="border-r bg-sidebar">
+        <SidebarHeader className="p-4 pb-3">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-emerald-500 shadow-sm">
-              <Droplets className="w-5 h-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-background">
+              <Droplets className="h-5 w-5 text-primary" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-base bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent">
+              <span className="text-base font-semibold tracking-tight">
                 AgroEve
               </span>
-              <span className="text-[10px] text-muted-foreground leading-none">
+              <span className="text-[11px] leading-none text-muted-foreground">
                 Gestión Interna
               </span>
             </div>
@@ -149,11 +149,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <SidebarSeparator />
 
-        <SidebarContent>
+        <SidebarContent className="px-2 py-2">
           <SidebarGroup>
-            <SidebarGroupLabel>Navegación</SidebarGroupLabel>
+            <SidebarGroupLabel className="px-2 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">
+              Navegación
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-1">
                 {navItems.map((item) => {
                   const isActive =
                     item.href === '/panel'
@@ -165,10 +167,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <SidebarMenuButton
                         asChild
                         isActive={isActive}
-                        tooltip={`${item.emoji} ${item.title}`}
+                        tooltip={item.title}
                         onClick={() => router.push(item.href)}
                       >
-                        <button className="flex items-center gap-3 w-full" type="button">
+                        <button className="flex w-full items-center gap-3" type="button">
                           <item.icon className="h-4 w-4" />
                           <span>{item.title}</span>
                         </button>
@@ -183,9 +185,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <SidebarFooter>
           <SidebarSeparator />
-          <div className="flex items-center gap-3 px-2 py-1">
+          <div className="flex items-center gap-3 px-2 py-2">
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 text-xs font-medium">
+              <AvatarFallback className="bg-muted text-xs font-medium text-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -199,12 +201,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <SidebarInset>
         {/* Header */}
-        <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 sticky top-0 z-30">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:px-6">
           <SidebarTrigger className="-ml-1" />
 
           <Separator orientation="vertical" className="h-6" />
 
-          <h1 className="text-base font-semibold">{moduleTitle}</h1>
+          <h1 className="text-sm font-medium text-muted-foreground">{moduleTitle}</h1>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Theme toggle */}
@@ -225,9 +227,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* User menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
+                <Button variant="ghost" className="flex h-9 items-center gap-2 px-2">
                   <Avatar className="h-7 w-7">
-                    <AvatarFallback className="bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 text-[10px] font-medium">
+                    <AvatarFallback className="bg-muted text-[10px] font-medium text-foreground">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -261,8 +263,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Main content */}
-        <main className="flex-1 p-4 lg:p-6">
-          {children}
+        <main className="flex-1 bg-background p-4 lg:p-8">
+          <div className="mx-auto w-full max-w-7xl">
+            {children}
+          </div>
         </main>
       </SidebarInset>
     </SidebarProvider>

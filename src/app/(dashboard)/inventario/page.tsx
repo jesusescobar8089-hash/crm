@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { Fragment, useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { formatCOP, formatFecha, formatFechaHora } from '@/lib/format'
 import { CATEGORIA_INVENTARIO_LABELS, type CategoriaInventario } from '@/types'
@@ -161,18 +161,24 @@ export default function InventarioPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold">Inventario</h2>
-          <p className="text-muted-foreground text-sm">
-            Gestión de componentes, kits y materiales
-          </p>
+      <div className="rounded-md border bg-card p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-md bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+              <Package className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Inventario</h2>
+              <p className="text-sm text-muted-foreground">
+                Control de componentes, kits, materiales y movimientos.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => { setEditItem(null); setItemFormOpen(true) }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Ítem
+          </Button>
         </div>
-        <Button onClick={() => { setEditItem(null); setItemFormOpen(true) }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Ítem
-        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -216,7 +222,7 @@ export default function InventarioPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3 rounded-md border bg-card p-3 shadow-sm sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -242,7 +248,7 @@ export default function InventarioPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border overflow-hidden">
+      <div className="overflow-hidden rounded-md border bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
@@ -266,9 +272,8 @@ export default function InventarioPage() {
               </TableRow>
             ) : (
               items.map((item) => (
-                <>
+                <Fragment key={item.id}>
                   <TableRow
-                    key={item.id}
                     className={`cursor-pointer hover:bg-muted/50 ${isLowStock(item) ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
                     onClick={() => handleRowClick(item)}
                   >
@@ -363,7 +368,7 @@ export default function InventarioPage() {
                     </TableCell>
                   </TableRow>
                   {expandedRow === item.id && (
-                    <TableRow key={`${item.id}-detail`}>
+                    <TableRow>
                       <TableCell colSpan={9} className="bg-muted/30 p-4">
                         <div className="space-y-3">
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
@@ -425,7 +430,7 @@ export default function InventarioPage() {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
               ))
             )}
           </TableBody>
