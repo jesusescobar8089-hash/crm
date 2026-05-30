@@ -19,6 +19,7 @@ import {
   Moon,
   LogOut,
   Droplets,
+  ChevronRight,
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
 import {
@@ -77,6 +78,25 @@ function getModuleTitle(pathname: string): string {
   return item?.title ?? 'Dashboard'
 }
 
+function getBreadcrumb(pathname: string, moduleTitle: string) {
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length <= 1) return null
+
+  return (
+    <nav aria-label="Ruta actual" className="hidden items-center gap-1 text-sm text-muted-foreground md:flex">
+      <span>Inicio</span>
+      <ChevronRight className="h-3.5 w-3.5" />
+      <span>{moduleTitle}</span>
+      {segments.length > 1 && (
+        <>
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span className="font-medium text-foreground">Detalle</span>
+        </>
+      )}
+    </nav>
+  )
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -121,6 +141,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const moduleTitle = getModuleTitle(pathname)
+  const breadcrumb = getBreadcrumb(pathname, moduleTitle)
   const initials = user?.nombre
     ?.split(' ')
     .map((n) => n[0])
@@ -186,11 +207,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarFooter>
           <SidebarSeparator />
           <div className="flex items-center gap-3 px-2 py-2">
-            <Avatar className="h-8 w-8">
+            <div className="relative">
+              <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-muted text-xs font-medium text-foreground">
                 {initials}
               </AvatarFallback>
-            </Avatar>
+              </Avatar>
+              <span className="absolute -right-0.5 -bottom-0.5 flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-3 w-3 rounded-full border-2 border-sidebar bg-emerald-500" />
+              </span>
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user?.nombre}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
@@ -201,12 +228,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <SidebarInset>
         {/* Header */}
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:px-6">
           <SidebarTrigger className="-ml-1" />
 
           <Separator orientation="vertical" className="h-6" />
 
-          <h1 className="text-sm font-medium text-muted-foreground">{moduleTitle}</h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-bold tracking-tight md:text-2xl">{moduleTitle}</h1>
+            {breadcrumb}
+          </div>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Theme toggle */}

@@ -26,6 +26,7 @@ import {
   Cell,
   ResponsiveContainer,
   Legend,
+  Tooltip,
 } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -88,13 +89,13 @@ interface DashboardData {
 }
 
 const METRIC_CARDS = [
-  { key: 'clientesActivos' as const, label: 'Clientes Activos', icon: Users, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100 dark:bg-sky-900/30', format: 'number' },
-  { key: 'kitsInstalados' as const, label: 'Kits Instalados', icon: Droplets, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30', format: 'number' },
-  { key: 'mantenimientosProximos' as const, label: 'Mantenimientos Próximos', icon: Wrench, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', format: 'number' },
-  { key: 'cotizacionesPendientes' as const, label: 'Cotizaciones Pendientes', icon: FileText, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-900/30', format: 'number' },
-  { key: 'ingresosDelMes' as const, label: 'Ingresos del Mes', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30', format: 'money' },
-  { key: 'gastosDelMes' as const, label: 'Gastos del Mes', icon: TrendingDown, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', format: 'money' },
-  { key: 'utilidadBrutaDelMes' as const, label: 'Utilidad Bruta', icon: DollarSign, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100 dark:bg-sky-900/30', format: 'money' },
+  { key: 'clientesActivos' as const, label: 'Clientes Activos', helper: '(activos)', icon: Users, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100 dark:bg-sky-900/30', border: 'border-l-sky-500', format: 'number' },
+  { key: 'kitsInstalados' as const, label: 'Kits Instalados', helper: '(activos)', icon: Droplets, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30', border: 'border-l-emerald-500', format: 'number' },
+  { key: 'mantenimientosProximos' as const, label: 'Mantenimientos Próximos', helper: '(7 días)', icon: Wrench, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', border: 'border-l-amber-500', format: 'number' },
+  { key: 'cotizacionesPendientes' as const, label: 'Cotizaciones Pendientes', helper: '(abiertas)', icon: FileText, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-900/30', border: 'border-l-violet-500', format: 'number' },
+  { key: 'ingresosDelMes' as const, label: 'Ingresos del Mes', helper: '(este mes)', icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30', border: 'border-l-emerald-500', format: 'money' },
+  { key: 'gastosDelMes' as const, label: 'Gastos del Mes', helper: '(este mes)', icon: TrendingDown, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', border: 'border-l-red-500', format: 'money' },
+  { key: 'utilidadBrutaDelMes' as const, label: 'Utilidad Bruta', helper: '(este mes)', icon: DollarSign, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100 dark:bg-sky-900/30', border: 'border-l-sky-500', format: 'money' },
 ]
 
 const PIE_COLORS = ['#0ea5e9', '#f59e0b', '#10b981', '#ef4444']
@@ -105,6 +106,33 @@ const CHART_COLORS = {
   enviadas: '#0ea5e9',
   aceptadas: '#10b981',
   perdidas: '#ef4444',
+}
+
+const tooltipStyle = {
+  borderRadius: '0.625rem',
+  border: '1px solid var(--border)',
+  background: 'var(--card)',
+  color: 'var(--card-foreground)',
+  boxShadow: '0 12px 30px oklch(0 0 0 / 12%)',
+}
+
+function getReadableAction(evento: DashboardData['actividadReciente'][number]) {
+  const modulo = evento.modulo.replace('_', ' ')
+  const accion = evento.accion
+
+  if (accion.includes('crear')) return `Creó ${modulo}`
+  if (accion.includes('actualizar') || accion.includes('editar')) return `Actualizó ${modulo}`
+  if (accion.includes('eliminar')) return `Eliminó ${modulo}`
+  if (accion.includes('cambiar_estado')) return `Cambió estado`
+  if (accion.includes('subir')) return `Subió documento`
+
+  return accion.replaceAll('_', ' ')
+}
+
+function getSocioAvatarClass(socio: string) {
+  return socio === 'socioB'
+    ? 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300'
+    : 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
 }
 
 export default function DashboardPage() {

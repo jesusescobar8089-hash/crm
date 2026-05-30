@@ -113,10 +113,17 @@ export function DataTable<TData, TValue>({
     })
   }
 
+  const filteredRows = table.getFilteredRowModel().rows.length
+  const pageIndex = table.getState().pagination.pageIndex
+  const currentPageSize = table.getState().pagination.pageSize
+  const firstResult = filteredRows === 0 ? 0 : pageIndex * currentPageSize + 1
+  const lastResult = Math.min((pageIndex + 1) * currentPageSize, filteredRows)
+  const pageCount = Math.max(table.getPageCount(), 1)
+
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-col gap-3 rounded-md border bg-muted/20 p-3 sm:flex-row">
+      <div className="flex flex-col gap-4 rounded-lg border bg-muted/50 p-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -145,12 +152,12 @@ export function DataTable<TData, TValue>({
 
       {/* Table */}
       <div className="overflow-hidden rounded-md border bg-card">
-        <Table>
+        <Table className="table-striped">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="bg-muted/50 text-xs font-semibold uppercase tracking-normal text-muted-foreground">
+                  <TableHead key={header.id} className="bg-muted/50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -164,7 +171,7 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className={onRowClick ? 'cursor-pointer hover:bg-muted/60' : 'hover:bg-muted/40'}
+                  className={onRowClick ? 'cursor-pointer hover:bg-muted/70' : 'hover:bg-muted/50'}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -186,15 +193,15 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2 sm:flex-row">
-        <p className="text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} resultado(s) en total
+      <div className="flex flex-col items-center justify-between gap-3 rounded-lg border bg-muted/50 px-4 py-3 sm:flex-row">
+        <p className="text-sm font-medium text-muted-foreground">
+          Mostrando {firstResult}-{lastResult} de {filteredRows}
         </p>
         <div className="flex items-center gap-1">
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9"
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
           >
@@ -203,19 +210,19 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm px-2">
-            {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+          <span className="px-3 text-sm font-semibold">
+            Página {pageIndex + 1} de {pageCount}
           </span>
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
@@ -224,7 +231,7 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9"
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
           >

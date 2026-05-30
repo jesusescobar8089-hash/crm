@@ -133,14 +133,14 @@ export default function ClientesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-md border bg-card p-5 shadow-sm">
+      <div className="bg-transparent">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-md bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
               <Users className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight">Clientes</h2>
+              <h2 className="text-3xl font-bold tracking-tight">Clientes</h2>
               <p className="text-sm text-muted-foreground">
                 Directorio comercial, estado de negociación y responsables.
               </p>
@@ -162,15 +162,15 @@ export default function ClientesPage() {
         ] as const).map(([estado, Icon, color, bg]) => {
           const count = clientes.filter((c) => c.estado === estado).length
           return (
-            <Card key={estado} className="cursor-pointer rounded-md shadow-sm transition-shadow hover:shadow-md" onClick={() => router.push(`/clientes?estado=${estado}`)}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm text-muted-foreground">{ESTADO_CLIENTE_LABELS[estado]}</p>
-                  <span className={`rounded-md p-1.5 ${bg}`}>
-                    <Icon className={`h-4 w-4 ${color}`} />
-                  </span>
+            <Card key={estado} className="min-h-20 cursor-pointer rounded-lg shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md" onClick={() => router.push(`/clientes?estado=${estado}`)}>
+              <CardContent className="flex min-h-20 items-center justify-between p-4">
+                <div className="text-center sm:text-left">
+                  <p className="text-3xl font-bold tracking-tight">{count}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{ESTADO_CLIENTE_LABELS[estado]}</p>
                 </div>
-                <p className="mt-2 text-2xl font-semibold">{count}</p>
+                <span className={`rounded-lg p-3 ${bg}`}>
+                  <Icon className={`h-5 w-5 ${color}`} />
+                </span>
               </CardContent>
             </Card>
           )
