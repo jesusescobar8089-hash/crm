@@ -1,3 +1,4 @@
+import { rejectUnauthenticated } from '@/lib/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
@@ -8,6 +9,9 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const unauthorized = await rejectUnauthenticated(_request)
+  if (unauthorized) return unauthorized
+
   try {
     const { id } = await params
     const transaccion = await db.transaccion.findUnique({
@@ -30,6 +34,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const { id } = await params
     const parsed = transaccionUpdateSchema.safeParse(await request.json())
@@ -72,6 +79,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)

@@ -1,3 +1,4 @@
+import { rejectUnauthenticated } from '@/lib/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -5,6 +6,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const { id } = await params
     const body = await request.json()
@@ -36,6 +40,9 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const unauthorized = await rejectUnauthenticated(_request)
+  if (unauthorized) return unauthorized
+
   try {
     const { id } = await params
 

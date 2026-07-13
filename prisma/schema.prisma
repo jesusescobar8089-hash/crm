@@ -284,6 +284,7 @@ model Tarea {
 model Documento {
   id             String      @id @default(cuid())
   nombre         String
+  nombreArchivo  String?
   tipo           String
   descripcion    String?
   rutaArchivo    String

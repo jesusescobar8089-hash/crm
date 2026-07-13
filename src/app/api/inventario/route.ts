@@ -1,3 +1,4 @@
+import { rejectUnauthenticated } from '@/lib/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
@@ -5,6 +6,9 @@ import { inventarioSchema } from '@/lib/schemas/entities.schema'
 import { validationError } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const { searchParams } = new URL(request.url)
     const categoria = searchParams.get('categoria')
@@ -37,6 +41,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const parsed = inventarioSchema.safeParse(await request.json())
     if (!parsed.success) return validationError(parsed.error)

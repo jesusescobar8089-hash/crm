@@ -1,62 +1,48 @@
+import { get } from '@vercel/blob'
 import { NextRequest, NextResponse } from 'next/server'
-import { readFile, stat } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
+import { AuthenticationError, requireSession } from '@/lib/auth-guard'
+import { contentDisposition, sanitizeDocumentFilename } from '@/lib/document-files'
 import { db } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    await requireSession(request)
     const { id } = await params
-    const { searchParams } = new URL(request.url)
-    const preview = searchParams.get('preview') === '1'
-
+    const preview = request.nextUrl.searchParams.get('preview') === '1'
     const documento = await db.documento.findUnique({ where: { id } })
 
     if (!documento) {
       return NextResponse.json({ error: 'Documento no encontrado' }, { status: 404 })
     }
-
-    const absolutePath = path.join(process.cwd(), 'public', documento.rutaArchivo)
-
-    if (!existsSync(absolutePath)) {
-      return NextResponse.json({ error: 'Archivo no encontrado en disco' }, { status: 404 })
+    if (!documento.rutaArchivo.startsWith('https://')) {
+      return NextResponse.json(
+        { error: 'Este archivo es anterior al almacenamiento privado y debe volver a subirse' },
+        { status: 410 },
+      )
     }
 
-    const fileBuffer = await readFile(absolutePath)
-    const fileStat = await stat(absolutePath)
-
-    // Determine content type based on extension
-    const ext = path.extname(documento.rutaArchivo).toLowerCase()
-    const contentTypes: Record<string, string> = {
-      '.pdf': 'application/pdf',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    const result = await get(documento.rutaArchivo, { access: 'private' })
+    if (!result || result.statusCode !== 200) {
+      return NextResponse.json({ error: 'Archivo no encontrado' }, { status: 404 })
     }
 
-    const contentType = contentTypes[ext] || documento.mimeType || 'application/octet-stream'
-
-    // Get original filename (after the uuid- prefix)
-    const fileNameParts = documento.rutaArchivo.split('/')
-    const storedName = fileNameParts[fileNameParts.length - 1]
-    // Remove uuid prefix to get original name
-    const originalName = storedName.replace(/^[a-f0-9-]{36}-/, '')
-
+    const fallbackName = result.blob.pathname.split('/').pop()?.replace(/-[A-Za-z0-9]{20,}(?=\.)/, '') || documento.nombre
+    const originalName = sanitizeDocumentFilename(documento.nombreArchivo || fallbackName)
     const headers = new Headers()
-    headers.set('Content-Type', contentType)
-    headers.set(
-      'Content-Disposition',
-      `${preview ? 'inline' : 'attachment'}; filename="${encodeURIComponent(originalName)}"`
-    )
-    headers.set('Content-Length', fileStat.size.toString())
+    headers.set('Content-Type', documento.mimeType || result.blob.contentType || 'application/octet-stream')
+    headers.set('Content-Disposition', contentDisposition(originalName, preview))
+    headers.set('Content-Length', String(result.blob.size))
+    headers.set('Cache-Control', 'private, no-store')
+    headers.set('X-Content-Type-Options', 'nosniff')
 
-    return new NextResponse(fileBuffer, { headers })
+    return new NextResponse(result.stream, { headers })
   } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
     console.error('Error downloading documento:', error)
     return NextResponse.json({ error: 'Error al descargar documento' }, { status: 500 })
   }

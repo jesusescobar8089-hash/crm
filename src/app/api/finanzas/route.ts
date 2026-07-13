@@ -1,8 +1,12 @@
+import { rejectUnauthenticated } from '@/lib/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { PRIMARY_OPERATOR_ID } from '@/lib/operator'
 
 export async function GET(request: NextRequest) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get('tipo') || 'resumen'

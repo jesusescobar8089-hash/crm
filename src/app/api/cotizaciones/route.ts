@@ -1,3 +1,4 @@
+import { rejectUnauthenticated } from '@/lib/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
@@ -8,6 +9,9 @@ import { validationError } from '@/lib/validation'
 
 // GET /api/cotizaciones - List all quotations with optional filters
 export async function GET(request: NextRequest) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const { searchParams } = new URL(request.url)
     const estado = searchParams.get('estado')
@@ -47,6 +51,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/cotizaciones - Create a new quotation
 export async function POST(request: NextRequest) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const parsed = cotizacionSchema.safeParse(await request.json())
     if (!parsed.success) return validationError(parsed.error)

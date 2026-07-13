@@ -1,0 +1,7 @@
+tmp/
+output/
+tests/
+coverage/
+*.log
+*.db
+*.db-journal

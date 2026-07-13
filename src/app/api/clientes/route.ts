@@ -1,3 +1,4 @@
+import { rejectUnauthenticated } from '@/lib/auth-guard'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
@@ -5,6 +6,9 @@ import { clienteSchema } from '@/lib/schemas/entities.schema'
 import { validationError } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
@@ -46,6 +50,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const parsed = clienteSchema.safeParse(await request.json())
     if (!parsed.success) return validationError(parsed.error)

@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { upload } from '@vercel/blob/client'
 import { toast } from 'sonner'
 import { TIPO_DOCUMENTO_LABELS, type TipoDocumento } from '@/types'
-import { useAuthStore } from '@/lib/auth-store'
+import { sanitizeDocumentFilename } from '@/lib/document-files'
 import {
   Dialog,
   DialogContent,
@@ -62,7 +63,6 @@ function formatFileSize(bytes: number): string {
 }
 
 export function DocumentoUploader({ open, onOpenChange, onSuccess, defaultClienteId }: DocumentoUploaderProps) {
-  const { user } = useAuthStore()
   const [uploading, setUploading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [nombre, setNombre] = useState('')
@@ -204,22 +204,29 @@ export function DocumentoUploader({ open, onOpenChange, onSuccess, defaultClient
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('nombre', nombre.trim())
-      formData.append('tipo', tipo)
-      formData.append('descripcion', descripcion.trim())
-      formData.append('socio', user?.nombre || 'sistema')
-      formData.append('fechaDocumento', fechaDocumento)
-      formData.append('tags', tags.trim())
+      const originalName = sanitizeDocumentFilename(file.name)
+      const blob = await upload(`documentos/${originalName}`, file, {
+        access: 'private',
+        handleUploadUrl: '/api/documentos/upload',
+        multipart: file.size > 5 * 1024 * 1024,
+        contentType: file.type || undefined,
+      })
 
-      if (clienteId) formData.append('clienteId', clienteId)
-      if (cotizacionId) formData.append('cotizacionId', cotizacionId)
-      if (monitoreoId) formData.append('monitoreoId', monitoreoId)
-
-      const res = await fetch('/api/documentos/upload', {
+      const res = await fetch('/api/documentos', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blobUrl: blob.url,
+          originalName,
+          nombre: nombre.trim(),
+          tipo,
+          descripcion: descripcion.trim() || null,
+          fechaDocumento: fechaDocumento || null,
+          tags: tags.trim() || null,
+          clienteId: clienteId || null,
+          cotizacionId: cotizacionId || null,
+          monitoreoId: monitoreoId || null,
+        }),
       })
 
       if (!res.ok) {

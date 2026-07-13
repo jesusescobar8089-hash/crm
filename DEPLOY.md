@@ -30,11 +30,15 @@ Vercel detecta Next.js automáticamente. El archivo `vercel.json` fija el framew
 
 No ejecutar `prisma migrate dev` ni `prisma db push` en producción.
 
-## Archivos subidos: decisión pendiente antes de producción
+## Documentos privados con Vercel Blob
 
-Actualmente `/api/documentos/upload` escribe en `public/uploads`. Ese disco no es almacenamiento durable en Vercel y puede perderse al reemplazar una instancia en Railway. Antes de habilitar documentos en producción hay que conectar almacenamiento de objetos (por ejemplo, un bucket de Railway, Vercel Blob o S3) y guardar en PostgreSQL la URL resultante.
+La carga usa Vercel Blob privado y envía el archivo directamente desde el navegador para evitar el límite de 4,5 MB de las Functions. El proyecto debe tener conectado un Blob store privado; Vercel agrega `BLOB_READ_WRITE_TOKEN` automáticamente al conectarlo. La aplicación admite PDF, JPG, PNG, DOCX y XLSX hasta 20 MB, valida el contenido real, y exige sesión para subir, descargar o borrar.
 
-Hasta completar esa integración, no usar la carga de documentos en el entorno productivo.
+Los registros antiguos cuya `rutaArchivo` empiece por `/uploads/` apuntaban al disco efímero anterior y deben volver a subirse. La descarga devuelve `410` para identificarlos claramente.
+
+## Alcance fiscal
+
+Los PDF de factura del sistema son documentos comerciales mientras la integración DIAN siga pendiente. No presentarlos como factura electrónica fiscal válida en Colombia hasta completar esa integración o emitir la factura oficial mediante el proveedor autorizado correspondiente.
 
 ## Validación previa
 

@@ -1,7 +1,12 @@
+import type { NextRequest } from 'next/server'
+import { rejectUnauthenticated } from '@/lib/auth-guard'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const unauthorized = await rejectUnauthenticated(request)
+  if (unauthorized) return unauthorized
+
   try {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
