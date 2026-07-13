@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { monitoreoUpdateSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 // GET /api/monitoreos/[id] - Get monitoring with mantenimientos and cliente
 export async function GET(
@@ -35,7 +37,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
+    const parsed = monitoreoUpdateSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const { socio, clienteId, kitId, fechaInstalacion, frecuenciaMantenimiento, estado, observaciones } = body
 
     const existing = await db.monitoreo.findUnique({ where: { id } })

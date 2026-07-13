@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
@@ -101,19 +101,32 @@ function getBreadcrumb(pathname: string, moduleTitle: string) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated, login, logout } = useAuthStore()
   const { theme, setTheme } = useTheme()
   const mounted = useMounted()
-
-  const handleAuthRedirect = useCallback(() => {
-    if (mounted && !isAuthenticated) {
-      router.replace('/login')
-    }
-  }, [mounted, isAuthenticated, router])
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
-    handleAuthRedirect()
-  }, [handleAuthRedirect])
+    if (!mounted) return
+    let active = true
+
+    fetch('/api/auth', { credentials: 'include' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('No autenticado')
+        const data = await response.json()
+        if (active) login(data.user)
+      })
+      .catch(() => {
+        if (!active) return
+        logout()
+        router.replace('/login')
+      })
+      .finally(() => {
+        if (active) setAuthChecked(true)
+      })
+
+    return () => { active = false }
+  }, [mounted, login, logout, router])
 
   // Apply user theme preference
   useEffect(() => {
@@ -122,18 +135,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user?.tema, mounted, setTheme])
 
-  if (!mounted || !isAuthenticated) {
+  if (!mounted || !authChecked || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <img src="/brand/image2.png" alt="AgroEve" className="h-12 w-auto animate-pulse" />
+          <img src="/brand/image2.png" alt="AgroEve" className="h-16 w-auto animate-pulse" />
           <p className="text-sm text-muted-foreground">Cargando...</p>
         </div>
       </div>
     )
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch('/api/auth', { method: 'DELETE', credentials: 'include' })
     logout()
     toast.success('Sesión cerrada')
     router.replace('/login')
@@ -153,8 +167,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar variant="sidebar" collapsible="offcanvas" className="border-r bg-sidebar">
         <SidebarHeader className="p-4 pb-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 min-w-0 items-center">
-              <img src="/brand/image2.png" alt="AgroEve" className="h-9 w-auto max-w-36 object-contain" />
+            <div className="flex h-16 min-w-0 items-center">
+              <img src="/brand/image2.png" alt="AgroEve" className="h-14 w-auto max-w-48 object-contain" />
             </div>
             <div className="flex min-w-0 flex-col">
               <span className="text-[11px] leading-none text-muted-foreground">

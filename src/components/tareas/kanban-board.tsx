@@ -20,7 +20,6 @@ import { formatFecha } from '@/lib/format'
 import { useAuthStore } from '@/lib/auth-store'
 import { getOperatorLabel } from '@/lib/operator'
 import {
-  ESTADO_TAREA_COLORS,
   ESTADO_TAREA_LABELS,
   PRIORIDAD_COLORS,
   type EstadoTarea,

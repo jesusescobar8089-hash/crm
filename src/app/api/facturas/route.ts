@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
 import { calculateTaxIncludedTotals } from '@/lib/totals'
 import { normalizeCommercialItem, type CommercialItemInput } from '@/lib/commercial-docs'
+import { facturaSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,7 +46,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const parsed = facturaSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const {
       clienteId,
       cotizacionId,
@@ -67,6 +71,17 @@ export async function POST(request: NextRequest) {
 
     if (!clienteId || !fechaEmision || !socio || !items?.length) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
+    }
+
+    const [cliente, cotizacion] = await Promise.all([
+      db.cliente.findUnique({ where: { id: clienteId }, select: { id: true } }),
+      cotizacionId
+        ? db.cotizacion.findUnique({ where: { id: cotizacionId }, select: { id: true, clienteId: true } })
+        : Promise.resolve(null),
+    ])
+    if (!cliente) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 400 })
+    if (cotizacionId && (!cotizacion || cotizacion.clienteId !== clienteId)) {
+      return NextResponse.json({ error: 'La cotización no pertenece al cliente indicado' }, { status: 400 })
     }
 
     const year = new Date().getFullYear()

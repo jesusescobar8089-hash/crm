@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { transaccionSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,8 +52,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const parsed = transaccionSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const { tipo, categoria, descripcion, monto, socio, metodoPago, clienteId, cotizacionId, fecha } = body
+
+    const [cliente, cotizacion] = await Promise.all([
+      clienteId ? db.cliente.findUnique({ where: { id: clienteId }, select: { id: true } }) : Promise.resolve(null),
+      cotizacionId ? db.cotizacion.findUnique({ where: { id: cotizacionId }, select: { id: true, clienteId: true } }) : Promise.resolve(null),
+    ])
+    if (clienteId && !cliente) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 400 })
+    if (cotizacionId && (!cotizacion || (clienteId && cotizacion.clienteId !== clienteId))) {
+      return NextResponse.json({ error: 'Cotización inválida para el cliente indicado' }, { status: 400 })
+    }
 
     const transaccion = await db.transaccion.create({
       data: {

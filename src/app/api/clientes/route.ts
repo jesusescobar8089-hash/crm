@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { clienteSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,7 +47,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const parsed = clienteSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const {
       nombre,
       empresa,

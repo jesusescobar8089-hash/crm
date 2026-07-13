@@ -63,11 +63,11 @@ export const pdfStyles = StyleSheet.create({
     borderBottomColor: colors.green,
   },
   logo: {
-    width: 148,
-    height: 44,
+    width: 205,
+    height: 62,
     objectFit: 'contain' as const,
-    marginLeft: -12,
-    marginBottom: 7,
+    marginLeft: -18,
+    marginBottom: 5,
   },
   companyName: {
     fontSize: 13,
@@ -360,7 +360,7 @@ export function CommercialDocumentPage({
         <View style={{ flex: 1 }}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf Image does not support alt. */}
           {logo && <Image src={logo} style={pdfStyles.logo} />}
-          <Text style={pdfStyles.companyName}>{company.razonSocial}</Text>
+          {!logo && <Text style={pdfStyles.companyName}>{company.razonSocial}</Text>}
           {company.nit && <Text style={pdfStyles.companyText}>NIT: {company.nit}</Text>}
           {company.direccion && <Text style={pdfStyles.companyText}>{company.direccion}</Text>}
           {joinFilled([company.ciudad, company.telefono]) && (
@@ -471,8 +471,6 @@ export function TotalsBox({
   subtotalGeneral,
   descuento,
   descuentoMonto,
-  baseGravable,
-  ivaMonto,
   total,
   currency,
   totalLabel,

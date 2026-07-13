@@ -21,6 +21,7 @@ export async function authenticateUser(email: string, password: string) {
     nombre: user.nombre,
     email: user.email,
     tema: user.tema,
+    sessionVersion: user.sessionVersion,
   }
 }
 
@@ -29,4 +30,5 @@ export interface SessionUser {
   nombre: string
   email: string
   tema: string
+  sessionVersion: number
 }

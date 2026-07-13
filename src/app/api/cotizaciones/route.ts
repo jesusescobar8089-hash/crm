@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
 import { calculateTaxIncludedTotals } from '@/lib/totals'
 import { normalizeCommercialItem, type CommercialItemInput } from '@/lib/commercial-docs'
+import { cotizacionSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 // GET /api/cotizaciones - List all quotations with optional filters
 export async function GET(request: NextRequest) {
@@ -46,7 +48,9 @@ export async function GET(request: NextRequest) {
 // POST /api/cotizaciones - Create a new quotation
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const parsed = cotizacionSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const {
       clienteId,
       fechaEmision,
@@ -70,6 +74,9 @@ export async function POST(request: NextRequest) {
     if (!clienteId || !fechaEmision || !socio || !items?.length) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
     }
+
+    const cliente = await db.cliente.findUnique({ where: { id: clienteId }, select: { id: true } })
+    if (!cliente) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 400 })
 
     // Auto-generate numero: COT-YYYY-NNN
     const year = new Date().getFullYear()

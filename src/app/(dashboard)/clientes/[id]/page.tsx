@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
   Edit,
+  Trash2,
   MessageSquarePlus,
   Phone,
   Mail,
@@ -51,7 +52,7 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { DocumentoUploader } from '@/components/documentos/documento-uploader'
 import { formatCOP, formatFecha } from '@/lib/format'
 import { PRIMARY_OPERATOR_ID, getOperatorLabel } from '@/lib/operator'
-import { ESTADO_CLIENTE_LABELS, type EstadoCliente, ESTADO_COTIZACION_LABELS, ESTADO_MONITOREO_LABELS, ESTADO_TAREA_LABELS, PRIORIDAD_COLORS, CATEGORIA_INVENTARIO_LABELS } from '@/types'
+import { ESTADO_CLIENTE_LABELS, type EstadoCliente, PRIORIDAD_COLORS, CATEGORIA_INVENTARIO_LABELS } from '@/types'
 
 interface ClienteDetalle {
   id: string
@@ -206,7 +207,6 @@ const TIPOS_INTERACCION_COLORS: Record<string, string> = {
 export default function ClienteDetallePage() {
   const params = useParams()
   const router = useRouter()
-  const queryClient = useQueryClient()
   const clienteId = params.id as string
 
   const [editOpen, setEditOpen] = useState(false)
@@ -326,6 +326,15 @@ export default function ClienteDetallePage() {
           <Button variant="outline" size="sm" onClick={() => setEstadoDialogOpen(true)} className="gap-2">
             <Activity className="h-4 w-4" />
             Cambiar Estado
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDeleteOpen(true)}
+            className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+            Eliminar
           </Button>
           <Button size="sm" onClick={() => setInteraccionOpen(true)} className="gap-2">
             <MessageSquarePlus className="h-4 w-4" />
@@ -951,6 +960,7 @@ export default function ClienteDetallePage() {
         description="¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer y se eliminarán todas las interacciones, monitoreos y cotizaciones asociadas."
         onConfirm={handleDelete}
         variant="destructive"
+        confirmText="Eliminar cliente"
       />
 
       {/* Document Upload Dialog */}

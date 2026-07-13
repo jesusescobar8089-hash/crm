@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/lib/auth-store'
@@ -32,7 +33,8 @@ import {
 } from 'lucide-react'
 
 export default function ConfiguracionPage() {
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
 
   // Password dialog
@@ -79,8 +81,8 @@ export default function ConfiguracionPage() {
       toast.error('Todos los campos son requeridos')
       return
     }
-    if (newPassword.length < 6) {
-      toast.error('La nueva contraseña debe tener al menos 6 caracteres')
+    if (newPassword.length < 8 || !/[a-z]/.test(newPassword) || !/[A-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      toast.error('Usa al menos 8 caracteres, mayúscula, minúscula y número')
       return
     }
     if (newPassword !== confirmPassword) {
@@ -92,9 +94,9 @@ export default function ConfiguracionPage() {
     try {
       const res = await fetch('/api/auth/password', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user?.id,
           currentPassword,
           newPassword,
         }),
@@ -111,6 +113,8 @@ export default function ConfiguracionPage() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      logout()
+      router.replace('/login')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al cambiar la contraseña')
     } finally {
@@ -274,10 +278,6 @@ export default function ConfiguracionPage() {
             <div className="space-y-2">
               <Label>Notas automaticas</Label>
               <Textarea value={commercialConfig.notasAutomaticas} onChange={(e) => updateCommercialConfig('notasAutomaticas', e.target.value)} rows={3} />
-            </div>
-            <div className="space-y-2">
-              <Label>Garantia predeterminada</Label>
-              <Textarea value={commercialConfig.garantiaPredeterminada} onChange={(e) => updateCommercialConfig('garantiaPredeterminada', e.target.value)} rows={3} />
             </div>
             <div className="space-y-2">
               <Label>Informacion legal Colombia</Label>

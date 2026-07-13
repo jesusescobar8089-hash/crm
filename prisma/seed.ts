@@ -82,7 +82,7 @@ async function main() {
     },
   })
 
-  const cliente5 = await prisma.cliente.create({
+  const _cliente5 = await prisma.cliente.create({
     data: {
       nombre: 'Finca Acuícola La Esperanza',
       empresa: null,
@@ -158,7 +158,7 @@ async function main() {
     },
   })
 
-  const itemSensorTemp = await prisma.inventarioItem.create({
+  const _itemSensorTemp = await prisma.inventarioItem.create({
     data: {
       nombre: 'Sensor de Temperatura',
       categoria: 'COMPONENTE',
@@ -170,7 +170,7 @@ async function main() {
     },
   })
 
-  const itemSensorOD = await prisma.inventarioItem.create({
+  const _itemSensorOD = await prisma.inventarioItem.create({
     data: {
       nombre: 'Sensor de Oxígeno Disuelto',
       categoria: 'COMPONENTE',
@@ -182,7 +182,7 @@ async function main() {
     },
   })
 
-  const itemPlaca = await prisma.inventarioItem.create({
+  const _itemPlaca = await prisma.inventarioItem.create({
     data: {
       nombre: 'Placa Controladora IoT',
       categoria: 'COMPONENTE',
@@ -207,7 +207,7 @@ async function main() {
     },
   })
 
-  const itemCable = await prisma.inventarioItem.create({
+  const _itemCable = await prisma.inventarioItem.create({
     data: {
       nombre: 'Cable USB-C',
       categoria: 'COMPONENTE',
@@ -218,7 +218,7 @@ async function main() {
     },
   })
 
-  const itemTuberia = await prisma.inventarioItem.create({
+  const _itemTuberia = await prisma.inventarioItem.create({
     data: {
       nombre: 'Tubería PVC 1/2"',
       categoria: 'MATERIAL_INSTALACION',
@@ -230,7 +230,7 @@ async function main() {
     },
   })
 
-  const itemCaja = await prisma.inventarioItem.create({
+  const _itemCaja = await prisma.inventarioItem.create({
     data: {
       nombre: 'Caja NEMA para exteriores',
       categoria: 'MATERIAL_INSTALACION',
@@ -242,7 +242,7 @@ async function main() {
     },
   })
 
-  const itemTornilleria = await prisma.inventarioItem.create({
+  const _itemTornilleria = await prisma.inventarioItem.create({
     data: {
       nombre: 'Kit Tornillería Inoxidable',
       categoria: 'MATERIAL_INSTALACION',
@@ -253,7 +253,7 @@ async function main() {
     },
   })
 
-  const itemSellador = await prisma.inventarioItem.create({
+  const _itemSellador = await prisma.inventarioItem.create({
     data: {
       nombre: 'Sellador Silicona Resistente al Agua',
       categoria: 'MATERIAL_INSTALACION',
@@ -288,7 +288,7 @@ async function main() {
     },
   })
 
-  const cotizacion2 = await prisma.cotizacion.create({
+  const _cotizacion2 = await prisma.cotizacion.create({
     data: {
       numero: 'COT-2026-002',
       clienteId: cliente2.id,
@@ -308,7 +308,7 @@ async function main() {
     },
   })
 
-  const cotizacion3 = await prisma.cotizacion.create({
+  const _cotizacion3 = await prisma.cotizacion.create({
     data: {
       numero: 'COT-2026-003',
       clienteId: cliente3.id,
@@ -535,7 +535,7 @@ async function main() {
     },
   })
 
-  const factura2 = await prisma.factura.create({
+  const _factura2 = await prisma.factura.create({
     data: {
       numero: 'FAC-2026-002',
       clienteId: cliente3.id,

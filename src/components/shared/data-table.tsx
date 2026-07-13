@@ -151,7 +151,7 @@ export function DataTable<TData extends object, TValue>({
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-md border bg-card">
+      <div className="overflow-x-auto rounded-md border bg-card">
         <Table className="table-striped">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

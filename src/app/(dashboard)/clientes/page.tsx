@@ -4,26 +4,30 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
-import { Plus, Users, Building2, Handshake, CheckCircle2, XCircle } from 'lucide-react'
+import { Plus, Users, Building2, Handshake, CheckCircle2, XCircle, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/shared/data-table'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { ClienteForm } from '@/components/clientes/cliente-form'
-import { ESTADO_CLIENTE_LABELS, type EstadoCliente } from '@/types'
+import { ESTADO_CLIENTE_LABELS } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getOperatorLabel } from '@/lib/operator'
+import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 
 interface Cliente {
   id: string
   nombre: string
   empresa: string | null
+  nit: string | null
+  direccion: string | null
   contactoNombre: string
   telefono: string
   email: string | null
   ciudad: string
   departamento: string
+  pais: string | null
   tipoNegocio: string
   estado: string
   socioResponsable: string
@@ -42,6 +46,9 @@ const TIPOS_NEGOCIO_LABELS: Record<string, string> = {
 export default function ClientesPage() {
   const router = useRouter()
   const [formOpen, setFormOpen] = useState(false)
+  const [editingClient, setEditingClient] = useState<Cliente | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Cliente | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const { data: clientes = [], isLoading, refetch } = useQuery<Cliente[]>({
     queryKey: ['clientes'],
@@ -55,6 +62,23 @@ export default function ClientesPage() {
   const handleRowClick = useCallback((cliente: Cliente) => {
     router.push(`/clientes/${cliente.id}`)
   }, [router])
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/clientes/${deleteTarget.id}`, { method: 'DELETE' })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(data?.error || 'No fue posible eliminar el cliente')
+      toast.success(`Cliente ${deleteTarget.nombre} eliminado`)
+      setDeleteTarget(null)
+      await refetch()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar cliente')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const columns: ColumnDef<Cliente>[] = [
     {
@@ -110,6 +134,37 @@ export default function ClientesPage() {
         if (filterValue === 'all') return true
         return row.getValue('socioResponsable') === filterValue
       },
+    },
+    {
+      id: 'acciones',
+      header: () => <span className="sr-only">Acciones</span>,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex justify-end gap-1" onClick={(event) => event.stopPropagation()}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label={`Editar ${row.original.nombre}`}
+            title="Editar cliente"
+            onClick={() => setEditingClient(row.original)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            aria-label={`Eliminar ${row.original.nombre}`}
+            title="Eliminar cliente"
+            onClick={() => setDeleteTarget(row.original)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
     },
   ]
 
@@ -208,6 +263,27 @@ export default function ClientesPage() {
           refetch()
           toast.success('Cliente creado exitosamente')
         }}
+      />
+
+      <ClienteForm
+        open={Boolean(editingClient)}
+        onOpenChange={(open) => { if (!open) setEditingClient(null) }}
+        cliente={editingClient}
+        onSuccess={() => {
+          setEditingClient(null)
+          refetch()
+          toast.success('Cliente actualizado')
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null) }}
+        title="Eliminar cliente"
+        description={`Se eliminará ${deleteTarget?.nombre ?? 'este cliente'} y sus cotizaciones, facturas, monitoreos e interacciones. Esta acción no se puede deshacer.`}
+        confirmText={deleting ? 'Eliminando…' : 'Eliminar cliente'}
+        onConfirm={handleDelete}
+        variant="destructive"
       />
     </div>
   )

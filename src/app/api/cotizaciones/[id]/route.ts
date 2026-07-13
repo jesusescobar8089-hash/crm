@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
 import { calculateTaxIncludedTotals } from '@/lib/totals'
 import { normalizeCommercialItem, type CommercialItemInput } from '@/lib/commercial-docs'
+import { cotizacionUpdateSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 // GET /api/cotizaciones/[id] - Get quotation with cliente and items
 export async function GET(
@@ -40,7 +42,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
+    const parsed = cotizacionUpdateSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const {
       socio,
       clienteId,

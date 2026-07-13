@@ -215,7 +215,7 @@ export function CotizacionForm({
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Error al guardar cotizacion')
+        throw new Error(data.issues?.[0]?.message || data.error || 'Error al guardar cotizacion')
       }
 
       toast.success(cotizacion ? 'Cotizacion actualizada' : 'Cotizacion creada')
@@ -363,7 +363,7 @@ export function CotizacionForm({
               />
             </div>
             <div className="space-y-2 lg:col-span-2">
-              <Label>Garantia</Label>
+              <Label>Garantia (opcional)</Label>
               <Textarea
                 value={form.garantia}
                 onChange={(event) => setForm({ ...form, garantia: event.target.value })}

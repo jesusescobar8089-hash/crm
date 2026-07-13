@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -14,7 +14,18 @@ model Usuario {
   password  String
   tema      String   @default("dark")
   activo    Boolean  @default(true)
+  sessionVersion Int @default(0)
   createdAt DateTime @default(now())
+}
+
+model AuthRateLimit {
+  key          String   @id
+  count        Int      @default(0)
+  windowStart  DateTime @default(now())
+  blockedUntil DateTime?
+  updatedAt    DateTime @updatedAt
+
+  @@index([updatedAt])
 }
 
 model Cliente {
@@ -43,6 +54,9 @@ model Cliente {
   documentos       Documento[]
   facturas         Factura[]
   movimientosInventario MovimientoStock[]
+
+  @@index([estado])
+  @@index([createdAt])
 }
 
 model Interaccion {
@@ -56,13 +70,15 @@ model Interaccion {
   proximaAccion String?
   fechaProxima  DateTime?
   createdAt     DateTime  @default(now())
+
+  @@index([clienteId, fecha])
 }
 
 model Cotizacion {
   id               String          @id @default(cuid())
   numero           String          @unique
   clienteId        String
-  cliente          Cliente         @relation(fields: [clienteId], references: [id])
+  cliente          Cliente         @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   fechaEmision     DateTime
   fechaVencimiento DateTime?
   estado           String          @default("BORRADOR")
@@ -84,6 +100,9 @@ model Cotizacion {
   facturas         Factura[]
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+
+  @@index([clienteId, fechaEmision])
+  @@index([estado])
 }
 
 model CotizacionItem {
@@ -111,9 +130,9 @@ model Factura {
   id               String        @id @default(cuid())
   numero           String        @unique
   clienteId        String
-  cliente          Cliente       @relation(fields: [clienteId], references: [id])
+  cliente          Cliente       @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   cotizacionId     String?
-  cotizacion       Cotizacion?   @relation(fields: [cotizacionId], references: [id])
+  cotizacion       Cotizacion?   @relation(fields: [cotizacionId], references: [id], onDelete: SetNull)
   fechaEmision     DateTime
   fechaVencimiento DateTime?
   fechaPago        DateTime?
@@ -134,6 +153,10 @@ model Factura {
   documentos       Documento[]
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
+
+  @@index([clienteId, fechaEmision])
+  @@index([cotizacionId])
+  @@index([estado])
 }
 
 model FacturaItem {
@@ -160,7 +183,7 @@ model FacturaItem {
 model Monitoreo {
   id                      String          @id @default(cuid())
   clienteId               String
-  cliente                 Cliente         @relation(fields: [clienteId], references: [id])
+  cliente                 Cliente         @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   kitId                   String?
   fechaInstalacion        DateTime
   frecuenciaMantenimiento Int
@@ -172,6 +195,9 @@ model Monitoreo {
   documentos              Documento[]
   createdAt               DateTime        @default(now())
   updatedAt               DateTime        @updatedAt
+
+  @@index([clienteId])
+  @@index([proximoMantenimiento])
 }
 
 model Mantenimiento {
@@ -183,6 +209,8 @@ model Mantenimiento {
   descripcion   String
   observaciones String?
   createdAt     DateTime   @default(now())
+
+  @@index([monitoreoId, fecha])
 }
 
 model InventarioItem {
@@ -213,6 +241,9 @@ model MovimientoStock {
   socio       String
   fecha       DateTime
   createdAt   DateTime       @default(now())
+
+  @@index([itemId, fecha])
+  @@index([clienteId])
 }
 
 model Transaccion {
@@ -228,6 +259,9 @@ model Transaccion {
   cotizacionId String?
   fecha        DateTime
   createdAt    DateTime  @default(now())
+
+  @@index([tipo, fecha])
+  @@index([clienteId])
 }
 
 model Tarea {
@@ -242,6 +276,9 @@ model Tarea {
   cliente     Cliente?  @relation(fields: [clienteId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([estado, fechaLimite])
+  @@index([clienteId])
 }
 
 model Documento {
@@ -264,6 +301,11 @@ model Documento {
   fechaDocumento DateTime?
   tags           String?
   createdAt      DateTime    @default(now())
+
+  @@index([clienteId, createdAt])
+  @@index([cotizacionId])
+  @@index([facturaId])
+  @@index([monitoreoId])
 }
 
 model BitacoraEvento {
@@ -274,6 +316,9 @@ model BitacoraEvento {
   entidadId String?
   detalle   String?
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([modulo])
 }
 
 model ConfiguracionComercial {
@@ -292,7 +337,7 @@ model ConfiguracionComercial {
   informacionLegal      String   @default("Documento comercial preparado para operacion en Colombia. Integracion DIAN pendiente.")
   informacionBancaria   String   @default("")
   notasAutomaticas      String   @default("")
-  garantiaPredeterminada String  @default("Garantia sujeta a condiciones de instalacion, uso adecuado y alcance contratado.")
+  garantiaPredeterminada String  @default("")
   ivaPredeterminado     Float    @default(0)
   moneda                String   @default("COP")
   dianJson              String?

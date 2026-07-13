@@ -8,7 +8,6 @@ import { z } from 'zod'
 import { useAuthStore } from '@/lib/auth-store'
 import { OPERATOR_OPTIONS, PRIMARY_OPERATOR_ID, getOperatorValue } from '@/lib/operator'
 import { ESTADO_TAREA_LABELS } from '@/types'
-import type { EstadoTarea, PrioridadTarea } from '@/types'
 import {
   Dialog,
   DialogContent,

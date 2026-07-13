@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { clienteUpdateSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 export async function GET(
   _request: NextRequest,
@@ -52,7 +54,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
+    const parsed = clienteUpdateSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
 
     const existing = await db.cliente.findUnique({ where: { id } })
     if (!existing) {

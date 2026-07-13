@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { inventarioUpdateSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 export async function GET(
   _request: NextRequest,
@@ -34,7 +36,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
+    const parsed = inventarioUpdateSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const { nombre, categoria, unidad, stockMinimo, costoUnitario, proveedor, notas, socio } = body
 
     const item = await db.inventarioItem.update({

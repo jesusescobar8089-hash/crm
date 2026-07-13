@@ -1,0 +1,24 @@
+-- CreateIndex
+CREATE INDEX "Cliente_estado_idx" ON "Cliente"("estado");
+CREATE INDEX "Cliente_createdAt_idx" ON "Cliente"("createdAt");
+CREATE INDEX "Interaccion_clienteId_fecha_idx" ON "Interaccion"("clienteId", "fecha");
+CREATE INDEX "Cotizacion_clienteId_fechaEmision_idx" ON "Cotizacion"("clienteId", "fechaEmision");
+CREATE INDEX "Cotizacion_estado_idx" ON "Cotizacion"("estado");
+CREATE INDEX "Factura_clienteId_fechaEmision_idx" ON "Factura"("clienteId", "fechaEmision");
+CREATE INDEX "Factura_cotizacionId_idx" ON "Factura"("cotizacionId");
+CREATE INDEX "Factura_estado_idx" ON "Factura"("estado");
+CREATE INDEX "Monitoreo_clienteId_idx" ON "Monitoreo"("clienteId");
+CREATE INDEX "Monitoreo_proximoMantenimiento_idx" ON "Monitoreo"("proximoMantenimiento");
+CREATE INDEX "Mantenimiento_monitoreoId_fecha_idx" ON "Mantenimiento"("monitoreoId", "fecha");
+CREATE INDEX "MovimientoStock_itemId_fecha_idx" ON "MovimientoStock"("itemId", "fecha");
+CREATE INDEX "MovimientoStock_clienteId_idx" ON "MovimientoStock"("clienteId");
+CREATE INDEX "Transaccion_tipo_fecha_idx" ON "Transaccion"("tipo", "fecha");
+CREATE INDEX "Transaccion_clienteId_idx" ON "Transaccion"("clienteId");
+CREATE INDEX "Tarea_estado_fechaLimite_idx" ON "Tarea"("estado", "fechaLimite");
+CREATE INDEX "Tarea_clienteId_idx" ON "Tarea"("clienteId");
+CREATE INDEX "Documento_clienteId_createdAt_idx" ON "Documento"("clienteId", "createdAt");
+CREATE INDEX "Documento_cotizacionId_idx" ON "Documento"("cotizacionId");
+CREATE INDEX "Documento_facturaId_idx" ON "Documento"("facturaId");
+CREATE INDEX "Documento_monitoreoId_idx" ON "Documento"("monitoreoId");
+CREATE INDEX "BitacoraEvento_createdAt_idx" ON "BitacoraEvento"("createdAt");
+CREATE INDEX "BitacoraEvento_modulo_idx" ON "BitacoraEvento"("modulo");

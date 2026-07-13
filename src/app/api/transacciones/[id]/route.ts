@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { transaccionUpdateSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 export async function GET(
   _request: NextRequest,
@@ -30,7 +32,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
+    const parsed = transaccionUpdateSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const { tipo, categoria, descripcion, monto, socio, metodoPago, clienteId, cotizacionId, fecha } = body
 
     const transaccion = await db.transaccion.update({

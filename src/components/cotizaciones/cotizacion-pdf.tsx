@@ -103,7 +103,7 @@ export function CotizacionPDF({
         >
           <NoteBox title="Observaciones">{observaciones}</NoteBox>
           <NoteBox title="Condiciones comerciales">{condiciones || config.notasAutomaticas}</NoteBox>
-          <NoteBox title="Garantia">{garantia || config.garantiaPredeterminada}</NoteBox>
+          <NoteBox title="Garantia">{garantia}</NoteBox>
           <NoteBox title="Aceptacion del cliente">{aceptacionCliente}</NoteBox>
         </NotesAndTotals>
       </CommercialDocumentPage>

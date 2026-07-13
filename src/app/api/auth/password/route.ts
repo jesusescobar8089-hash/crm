@@ -2,62 +2,55 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, hashPassword } from '@/lib/auth'
 import { registrarBitacora } from '@/lib/bitacora'
+import { AuthenticationError, requireSession } from '@/lib/auth-guard'
+import { changePasswordSchema } from '@/lib/schemas/auth.schema'
+import { clearSessionCookie } from '@/lib/session'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { userId, currentPassword, newPassword } = body
-
-    if (!userId || !currentPassword || !newPassword) {
+    const session = await requireSession(request)
+    const parsed = changePasswordSchema.safeParse(await request.json())
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Todos los campos son requeridos' },
-        { status: 400 }
+        { error: 'Datos inválidos', issues: parsed.error.issues },
+        { status: 400 },
       )
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json(
-        { error: 'La nueva contraseña debe tener al menos 6 caracteres' },
-        { status: 400 }
-      )
+    const { currentPassword, newPassword } = parsed.data
+    const user = await db.usuario.findUnique({ where: { id: session.sub } })
+    if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+
+    if (!await verifyPassword(currentPassword, user.password)) {
+      return NextResponse.json({ error: 'Contraseña actual incorrecta' }, { status: 401 })
     }
 
-    const user = await db.usuario.findUnique({ where: { id: userId } })
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Usuario no encontrado' },
-        { status: 404 }
-      )
-    }
-
-    const isValid = await verifyPassword(currentPassword, user.password)
-    if (!isValid) {
-      return NextResponse.json(
-        { error: 'Contraseña actual incorrecta' },
-        { status: 401 }
-      )
-    }
-
-    const hashedPassword = await hashPassword(newPassword)
     await db.usuario.update({
-      where: { id: userId },
-      data: { password: hashedPassword },
+      where: { id: user.id },
+      data: {
+        password: await hashPassword(newPassword),
+        sessionVersion: { increment: 1 },
+      },
     })
 
     await registrarBitacora({
       socio: user.nombre,
-      modulo: 'documentos',
+      modulo: 'usuarios',
       accion: 'CAMBIO_PASSWORD',
-      entidadId: userId,
-      detalle: 'Cambio de contraseña',
+      entidadId: user.id,
+      detalle: 'Cambio de contraseña e invalidación de sesiones',
     })
 
-    return NextResponse.json({ message: 'Contraseña actualizada correctamente' })
+    const response = NextResponse.json({
+      message: 'Contraseña actualizada. Inicia sesión de nuevo.',
+    })
+    clearSessionCookie(response)
+    return response
   } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
     console.error('Error changing password:', error)
-    return NextResponse.json(
-      { error: 'Error al cambiar la contraseña' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Error al cambiar la contraseña' }, { status: 500 })
   }
 }

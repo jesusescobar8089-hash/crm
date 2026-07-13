@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { monitoreoSchema } from '@/lib/schemas/entities.schema'
+import { validationError } from '@/lib/validation'
 
 // GET /api/monitoreos - List monitorings with cliente info
 export async function GET(request: NextRequest) {
@@ -32,12 +34,17 @@ export async function GET(request: NextRequest) {
 // POST /api/monitoreos - Create monitoring
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const parsed = monitoreoSchema.safeParse(await request.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const body = parsed.data
     const { clienteId, kitId, fechaInstalacion, frecuenciaMantenimiento, observaciones, socio } = body
 
     if (!clienteId || !fechaInstalacion || !frecuenciaMantenimiento || !socio) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
     }
+
+    const cliente = await db.cliente.findUnique({ where: { id: clienteId }, select: { id: true } })
+    if (!cliente) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 400 })
 
     // Calculate proximoMantenimiento
     const fechaInst = new Date(fechaInstalacion)

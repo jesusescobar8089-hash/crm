@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://user:pass@localhost:5432/agroeve' }}
+      PROD_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET || 'ci-only-session-secret-0123456789abcdef0123456789abcdef' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Aplicar migraciones de producción
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.PROD_DATABASE_URL != ''
+        run: npm run db:deploy
+        env:
+          DATABASE_URL: ${{ env.PROD_DATABASE_URL }}

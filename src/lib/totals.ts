@@ -13,11 +13,11 @@ export const TAX_OPTIONS = [
 
 export type TaxType = (typeof TAX_OPTIONS)[number]['value']
 
-export function getTaxOption(value?: string, fallbackRate = 19) {
+export function getTaxOption(value?: string, _fallbackRate = 19) {
   return TAX_OPTIONS.find((option) => option.value === value) ?? TAX_OPTIONS[0]
 }
 
-export function calculateLineTotals(item: PricedItem, defaultIva = 19) {
+export function calculateLineTotals(item: PricedItem, _defaultIva = 19) {
   const cantidad = Number.isFinite(item.cantidad) ? item.cantidad : 0
   const precioUnit = Number.isFinite(item.precioUnit) ? item.precioUnit : 0
   const descuento = Number.isFinite(item.descuento ?? 0) ? item.descuento ?? 0 : 0

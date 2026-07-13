@@ -13,12 +13,6 @@ import {
   ESTADO_MONITOREO_LABELS,
   ESTADO_TAREA_LABELS,
   ESTADO_FACTURA_LABELS,
-  type EstadoCliente,
-  type EstadoCotizacion,
-  type EstadoMonitoreo,
-  type EstadoTarea,
-  type PrioridadTarea,
-  type EstadoFactura,
 } from '@/types'
 
 type StatusType = 'cliente' | 'cotizacion' | 'monitoreo' | 'tarea' | 'prioridad' | 'factura'

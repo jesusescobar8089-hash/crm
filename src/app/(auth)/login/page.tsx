@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Mail, Lock, Loader2, ShieldCheck, Users, Wrench, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/lib/auth-store'
-import { PRIMARY_OPERATOR_EMAIL } from '@/lib/operator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,6 +30,7 @@ export default function LoginPage() {
     try {
       const res = await fetch('/api/auth', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
@@ -45,6 +45,7 @@ export default function LoginPage() {
       login(data.user)
       toast.success(`Bienvenido, ${data.user.nombre}`)
       router.push('/panel')
+      router.refresh()
     } catch {
       toast.error('Error de conexión')
     } finally {
@@ -91,7 +92,7 @@ export default function LoginPage() {
           <CardHeader className="space-y-6 border-b pb-6">
             <div className="flex items-center gap-3">
               <div className="flex min-w-0 flex-col">
-                <img src="/brand/image2.png" alt="AgroEve" className="h-12 w-auto max-w-52 object-contain" />
+                <img src="/brand/image2.png" alt="AgroEve" className="h-16 w-auto max-w-72 object-contain" />
                 <CardDescription className="mt-1 text-sm">
                   Acceso al sistema interno
                 </CardDescription>
@@ -151,12 +152,6 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 rounded-lg border bg-muted/30 p-3">
-              <p className="text-xs leading-5 text-muted-foreground">
-                <strong className="font-medium text-foreground">Credenciales de prueba</strong><br />
-                {PRIMARY_OPERATOR_EMAIL} / Aa123456
-            </p>
-            </div>
           </CardContent>
         </Card>
       </div>
