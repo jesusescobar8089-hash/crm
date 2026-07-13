@@ -1,27 +1,19 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { PRIMARY_OPERATOR_EMAIL, PRIMARY_OPERATOR_ID, PRIMARY_OPERATOR_LABEL } from '../src/lib/operator'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  // Create 2 users
-  const passwordHash = await bcrypt.hash('agroeve2026', 10)
+  // Create the single operating partner.
+  const passwordHash = await bcrypt.hash('Aa123456', 10)
 
-  const socioA = await prisma.usuario.create({
+  await prisma.usuario.create({
     data: {
-      nombre: 'Carlos Méndez',
-      email: 'socioA@agroeve.co',
+      nombre: PRIMARY_OPERATOR_LABEL,
+      email: PRIMARY_OPERATOR_EMAIL,
       password: passwordHash,
       tema: 'dark',
-    },
-  })
-
-  const socioB = await prisma.usuario.create({
-    data: {
-      nombre: 'María López',
-      email: 'socioB@agroeve.co',
-      password: passwordHash,
-      tema: 'light',
     },
   })
 
@@ -37,7 +29,7 @@ async function main() {
       departamento: 'Bolívar',
       tipoNegocio: 'camaronicultura',
       estado: 'INSTALADO_ACTIVO',
-      socioResponsable: 'socioA',
+      socioResponsable: PRIMARY_OPERATOR_ID,
       notas: 'Cliente principal de camaronicultura. Instalación completada en enero.',
     },
   })
@@ -53,7 +45,7 @@ async function main() {
       departamento: 'Meta',
       tipoNegocio: 'piscicultura',
       estado: 'EN_NEGOCIACION',
-      socioResponsable: 'socioB',
+      socioResponsable: PRIMARY_OPERATOR_ID,
       notas: 'Interesada en 3 kits. Negociación en curso.',
     },
   })
@@ -69,7 +61,7 @@ async function main() {
       departamento: 'Meta',
       tipoNegocio: 'agricultura',
       estado: 'COTIZADO',
-      socioResponsable: 'socioA',
+      socioResponsable: PRIMARY_OPERATOR_ID,
       notas: 'Cotización enviada, esperando respuesta desde hace 10 días.',
     },
   })
@@ -85,7 +77,7 @@ async function main() {
       departamento: 'Valle del Cauca',
       tipoNegocio: 'camaronicultura',
       estado: 'INSTALADO_ACTIVO',
-      socioResponsable: 'socioA',
+      socioResponsable: PRIMARY_OPERATOR_ID,
       notas: 'Dos kits instalados. Excelente relación.',
     },
   })
@@ -101,7 +93,7 @@ async function main() {
       departamento: 'Atlántico',
       tipoNegocio: 'piscicultura',
       estado: 'INACTIVO_PERDIDO',
-      socioResponsable: 'socioB',
+      socioResponsable: PRIMARY_OPERATOR_ID,
       notas: 'No se concretó el negocio. Presupuesto insuficiente.',
     },
   })
@@ -114,7 +106,7 @@ async function main() {
         tipo: 'visita',
         descripcion: 'Primera visita a las instalaciones del cliente.',
         fecha: new Date('2026-01-05'),
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         proximaAccion: 'Seguimiento de instalación',
         fechaProxima: new Date('2026-01-15'),
       },
@@ -123,14 +115,14 @@ async function main() {
         tipo: 'instalacion',
         descripcion: 'Instalación del kit de monitoreo completada.',
         fecha: new Date('2026-01-15'),
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
       },
       {
         clienteId: cliente2.id,
         tipo: 'llamada',
         descripcion: 'Llamada inicial de prospección. Mucho interés.',
         fecha: new Date('2026-02-10'),
-        socio: 'socioB',
+        socio: PRIMARY_OPERATOR_ID,
         proximaAccion: 'Enviar cotización formal',
         fechaProxima: new Date('2026-02-15'),
       },
@@ -139,7 +131,7 @@ async function main() {
         tipo: 'cotizacion_enviada',
         descripcion: 'Cotización enviada por correo electrónico.',
         fecha: new Date('2026-02-20'),
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         proximaAccion: 'Seguimiento en 5 días',
         fechaProxima: new Date('2026-02-25'),
       },
@@ -148,7 +140,7 @@ async function main() {
         tipo: 'mantenimiento',
         descripcion: 'Mantenimiento rutinario del kit 1.',
         fecha: new Date('2026-02-01'),
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
       },
     ],
   })
@@ -281,7 +273,7 @@ async function main() {
       fechaEmision: new Date('2026-01-08'),
       fechaVencimiento: new Date('2026-02-08'),
       estado: 'ACEPTADA',
-      socio: 'socioA',
+      socio: PRIMARY_OPERATOR_ID,
       descuento: 5,
       iva: 19,
       observaciones: 'Precio incluye instalación y capacitación. Garantía de 1 año.',
@@ -303,7 +295,7 @@ async function main() {
       fechaEmision: new Date('2026-02-15'),
       fechaVencimiento: new Date('2026-03-15'),
       estado: 'ENVIADA',
-      socio: 'socioB',
+      socio: PRIMARY_OPERATOR_ID,
       descuento: 0,
       iva: 19,
       observaciones: 'Válido por 30 días. No incluye transporte fuera de Villavicencio.',
@@ -323,7 +315,7 @@ async function main() {
       fechaEmision: new Date('2026-02-20'),
       fechaVencimiento: new Date('2026-03-20'),
       estado: 'ENVIADA',
-      socio: 'socioA',
+      socio: PRIMARY_OPERATOR_ID,
       descuento: 0,
       iva: 19,
       observaciones: 'Cotización para monitoreo agrícola.',
@@ -369,21 +361,21 @@ async function main() {
       {
         monitoreoId: monitoreo1.id,
         fecha: new Date('2026-02-15'),
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         descripcion: 'Mantenimiento rutinario. Calibración de sensores de pH y OD. Limpieza de sensores.',
         observaciones: 'Sensor de pH mostraba desviación de 0.2. Recalibrado correctamente.',
       },
       {
         monitoreoId: monitoreo1.id,
         fecha: new Date('2026-01-15'),
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         descripcion: 'Puesta en marcha y verificación inicial del sistema.',
         observaciones: 'Todos los parámetros dentro del rango esperado.',
       },
       {
         monitoreoId: monitoreo2.id,
         fecha: new Date('2026-02-01'),
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         descripcion: 'Primer mantenimiento post-instalación. Revisión general.',
         observaciones: 'Sin novedad. Equipo funcionando correctamente.',
       },
@@ -398,7 +390,7 @@ async function main() {
         categoria: 'venta_kit',
         descripcion: 'Venta kit de monitoreo - Acuicultura del Caribe',
         monto: 1950000,
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         metodoPago: 'transferencia',
         clienteId: cliente1.id,
         cotizacionId: cotizacion1.id,
@@ -409,7 +401,7 @@ async function main() {
         categoria: 'instalacion',
         descripcion: 'Servicio de instalación - Acuicultura del Caribe',
         monto: 300000,
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         metodoPago: 'transferencia',
         clienteId: cliente1.id,
         cotizacionId: cotizacion1.id,
@@ -420,7 +412,7 @@ async function main() {
         categoria: 'componentes',
         descripcion: 'Compra de sensores de pH y OD - Lote 10 unidades',
         monto: 1200000,
-        socio: 'socioB',
+        socio: PRIMARY_OPERATOR_ID,
         metodoPago: 'transferencia',
         fecha: new Date('2026-01-10'),
       },
@@ -429,16 +421,16 @@ async function main() {
         categoria: 'materiales',
         descripcion: 'Materiales de instalación - Tuberías y cajas NEMA',
         monto: 350000,
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         metodoPago: 'efectivo',
         fecha: new Date('2026-01-12'),
       },
       {
         tipo: 'APORTE_SOCIO',
         categoria: 'aporte',
-        descripcion: 'Aporte inicial de capital - Carlos',
+        descripcion: 'Aporte inicial de capital - Socio principal',
         monto: 5000000,
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         metodoPago: 'transferencia',
         fecha: new Date('2026-01-01'),
       },
@@ -451,7 +443,7 @@ async function main() {
       {
         titulo: 'Seguimiento cotización Piscícola San Martín',
         descripcion: 'Llamar a Ana Gómez para conocer decisión sobre la cotización de 3 kits.',
-        asignadoA: 'socioB',
+        asignadoA: PRIMARY_OPERATOR_ID,
         prioridad: 'ALTA',
         fechaLimite: new Date('2026-03-10'),
         estado: 'PENDIENTE',
@@ -460,7 +452,7 @@ async function main() {
       {
         titulo: 'Comprar sellador de silicona',
         descripcion: 'Stock bajo de sellador. Comprar mínimo 10 unidades.',
-        asignadoA: 'socioA',
+        asignadoA: PRIMARY_OPERATOR_ID,
         prioridad: 'MEDIA',
         fechaLimite: new Date('2026-03-05'),
         estado: 'EN_PROGRESO',
@@ -468,7 +460,7 @@ async function main() {
       {
         titulo: 'Preparar demo para Agroindustria Los Llanos',
         descripcion: 'Preparar demostración del kit de monitoreo agro para visita.',
-        asignadoA: 'ambos',
+        asignadoA: PRIMARY_OPERATOR_ID,
         prioridad: 'ALTA',
         fechaLimite: new Date('2026-03-01'),
         estado: 'COMPLETADA',
@@ -481,39 +473,104 @@ async function main() {
   await prisma.bitacoraEvento.createMany({
     data: [
       {
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         modulo: 'clientes',
         accion: 'crear',
         entidadId: cliente1.id,
         detalle: 'Cliente creado: Acuicultura del Caribe',
       },
       {
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         modulo: 'cotizaciones',
         accion: 'crear',
         entidadId: cotizacion1.id,
         detalle: 'Cotización COT-2026-001 creada para Acuicultura del Caribe',
       },
       {
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         modulo: 'cotizaciones',
         accion: 'cambiar_estado',
         entidadId: cotizacion1.id,
         detalle: 'Cotización COT-2026-001 cambiada a ACEPTADA',
       },
       {
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         modulo: 'monitoreos',
         accion: 'crear',
         entidadId: monitoreo1.id,
         detalle: 'Monitoreo creado para Acuicultura del Caribe',
       },
       {
-        socio: 'socioB',
+        socio: PRIMARY_OPERATOR_ID,
         modulo: 'clientes',
         accion: 'crear',
         entidadId: cliente2.id,
         detalle: 'Cliente creado: Piscícola San Martín',
+      },
+    ],
+  })
+
+  // Create factura (invoice from accepted cotizacion)
+  const factura1 = await prisma.factura.create({
+    data: {
+      numero: 'FAC-2026-001',
+      clienteId: cliente1.id,
+      cotizacionId: cotizacion1.id,
+      fechaEmision: new Date('2026-01-20'),
+      fechaVencimiento: new Date('2026-02-20'),
+      estado: 'PAGADA',
+      socio: PRIMARY_OPERATOR_ID,
+      descuento: 5,
+      iva: 19,
+      observaciones: 'Factura correspondiente a la cotización COT-2026-001. Pago recibido.',
+      metodoPago: 'transferencia',
+      fechaPago: new Date('2026-01-22'),
+      items: {
+        create: [
+          { descripcion: 'Kit Completo de Monitoreo (pH + Temp + OD)', cantidad: 1, precioUnit: 1500000, subtotal: 1500000, orden: 1 },
+          { descripcion: 'Instalación y configuración', cantidad: 1, precioUnit: 300000, subtotal: 300000, orden: 2 },
+          { descripcion: 'Capacitación de personal', cantidad: 1, precioUnit: 150000, subtotal: 150000, orden: 3 },
+        ],
+      },
+    },
+  })
+
+  const factura2 = await prisma.factura.create({
+    data: {
+      numero: 'FAC-2026-002',
+      clienteId: cliente3.id,
+      fechaEmision: new Date('2026-02-25'),
+      fechaVencimiento: new Date('2026-03-25'),
+      estado: 'EMITIDA',
+      socio: PRIMARY_OPERATOR_ID,
+      descuento: 0,
+      iva: 19,
+      observaciones: 'Factura por suministro de equipo de monitoreo agrícola.',
+      metodoPago: 'transferencia',
+      items: {
+        create: [
+          { descripcion: 'Kit Completo de Monitoreo Agro', cantidad: 2, precioUnit: 1200000, subtotal: 2400000, orden: 1 },
+          { descripcion: 'Instalación y configuración', cantidad: 2, precioUnit: 250000, subtotal: 500000, orden: 2 },
+        ],
+      },
+    },
+  })
+
+  await prisma.bitacoraEvento.createMany({
+    data: [
+      {
+        socio: PRIMARY_OPERATOR_ID,
+        modulo: 'facturas',
+        accion: 'crear',
+        entidadId: factura1.id,
+        detalle: 'Factura FAC-2026-001 creada para Acuicultura del Caribe',
+      },
+      {
+        socio: PRIMARY_OPERATOR_ID,
+        modulo: 'facturas',
+        accion: 'cambiar_estado',
+        entidadId: factura1.id,
+        detalle: 'Factura FAC-2026-001 cambiada a PAGADA',
       },
     ],
   })
@@ -528,7 +585,7 @@ async function main() {
         costo: 85000,
         proveedor: 'Distribuidora Electrónica Ltda',
         descripcion: 'Compra lote inicial de sensores de pH',
-        socio: 'socioB',
+        socio: PRIMARY_OPERATOR_ID,
         fecha: new Date('2026-01-10'),
       },
       {
@@ -538,16 +595,15 @@ async function main() {
         costo: 85000,
         clienteId: cliente1.id,
         descripcion: 'Uso en instalación Acuicultura del Caribe',
-        socio: 'socioA',
+        socio: PRIMARY_OPERATOR_ID,
         fecha: new Date('2026-01-15'),
       },
     ],
   })
 
-  console.log('✅ Seed completado exitosamente')
-  console.log('Usuarios creados:')
-  console.log('  - socioA@agroeve.co / agroeve2026')
-  console.log('  - socioB@agroeve.co / agroeve2026')
+  console.log('Seed completado exitosamente')
+  console.log('Usuario creado:')
+  console.log(`  - ${PRIMARY_OPERATOR_EMAIL} / Aa123456`)
 }
 
 main()
@@ -558,3 +614,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+

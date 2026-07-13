@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -49,19 +49,22 @@ import { InteraccionForm } from '@/components/clientes/interaccion-form'
 import { CotizacionForm } from '@/components/cotizaciones/cotizacion-form'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { DocumentoUploader } from '@/components/documentos/documento-uploader'
-import { useAuthStore } from '@/lib/auth-store'
 import { formatCOP, formatFecha } from '@/lib/format'
+import { PRIMARY_OPERATOR_ID, getOperatorLabel } from '@/lib/operator'
 import { ESTADO_CLIENTE_LABELS, type EstadoCliente, ESTADO_COTIZACION_LABELS, ESTADO_MONITOREO_LABELS, ESTADO_TAREA_LABELS, PRIORIDAD_COLORS, CATEGORIA_INVENTARIO_LABELS } from '@/types'
 
 interface ClienteDetalle {
   id: string
   nombre: string
   empresa: string | null
+  nit: string | null
+  direccion: string | null
   contactoNombre: string
   telefono: string
   email: string | null
   ciudad: string
   departamento: string
+  pais: string | null
   tipoNegocio: string
   estado: string
   socioResponsable: string
@@ -155,6 +158,24 @@ interface ClienteDetalle {
       costoUnitario: number
     }
   }>
+  facturas: Array<{
+    id: string
+    numero: string
+    fechaEmision: string
+    fechaVencimiento: string | null
+    estado: string
+    socio: string
+    descuento: number
+    iva: number
+    metodoPago: string | null
+    items: Array<{
+      id: string
+      descripcion: string
+      cantidad: number
+      precioUnit: number
+      subtotal: number
+    }>
+  }>
 }
 
 const TIPOS_NEGOCIO_LABELS: Record<string, string> = {
@@ -186,7 +207,6 @@ export default function ClienteDetallePage() {
   const params = useParams()
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { user } = useAuthStore()
   const clienteId = params.id as string
 
   const [editOpen, setEditOpen] = useState(false)
@@ -197,10 +217,7 @@ export default function ClienteDetallePage() {
   const [uploadOpen, setUploadOpen] = useState(false)
   const [cotizacionOpen, setCotizacionOpen] = useState(false)
 
-  const socio = useMemo(() => {
-    if (!user?.email) return 'socioA'
-    return user.email.startsWith('socioB') ? 'socioB' : 'socioA'
-  }, [user?.email])
+  const socio = PRIMARY_OPERATOR_ID
 
   const { data: cliente, isLoading, refetch } = useQuery<ClienteDetalle>({
     queryKey: ['cliente', clienteId],
@@ -319,42 +336,47 @@ export default function ClienteDetallePage() {
 
       {/* Tabs */}
       <Tabs defaultValue="info" className="space-y-4">
-        <TabsList className="flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="info" className="gap-1.5 text-xs sm:text-sm">
+        <TabsList className="flex flex-nowrap gap-1 w-full overflow-x-auto justify-start h-auto border-b rounded-none bg-transparent px-1 pb-2">
+          <TabsTrigger value="info" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <User className="h-3.5 w-3.5 hidden sm:block" />
-            Información
+            Info
+            <span className="sm:hidden">rmación</span>
           </TabsTrigger>
-          <TabsTrigger value="cotizaciones" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="cotizaciones" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <FileText className="h-3.5 w-3.5 hidden sm:block" />
-            Cotizaciones
+            Cotiz.
           </TabsTrigger>
-          <TabsTrigger value="monitoreos" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="facturas" className="gap-1.5 text-xs sm:text-sm shrink-0">
+            <DollarSign className="h-3.5 w-3.5 hidden sm:block" />
+            Facturas
+          </TabsTrigger>
+          <TabsTrigger value="monitoreos" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <Activity className="h-3.5 w-3.5 hidden sm:block" />
-            Monitoreos
+            Monit.
           </TabsTrigger>
-          <TabsTrigger value="inventario" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="inventario" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <Package className="h-3.5 w-3.5 hidden sm:block" />
-            Inventario
+            Invent.
           </TabsTrigger>
-          <TabsTrigger value="mantenimientos" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="mantenimientos" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <Wrench className="h-3.5 w-3.5 hidden sm:block" />
-            Mantenimientos
+            Manten.
           </TabsTrigger>
-          <TabsTrigger value="ingresos" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="ingresos" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <DollarSign className="h-3.5 w-3.5 hidden sm:block" />
             Ingresos
           </TabsTrigger>
-          <TabsTrigger value="interacciones" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="interacciones" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <Clock className="h-3.5 w-3.5 hidden sm:block" />
             Historial
           </TabsTrigger>
-          <TabsTrigger value="tareas" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="tareas" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <CheckSquare className="h-3.5 w-3.5 hidden sm:block" />
             Tareas
           </TabsTrigger>
-          <TabsTrigger value="documentos" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="documentos" className="gap-1.5 text-xs sm:text-sm shrink-0">
             <FolderOpen className="h-3.5 w-3.5 hidden sm:block" />
-            Documentos
+            Docs
           </TabsTrigger>
         </TabsList>
 
@@ -383,8 +405,8 @@ export default function ClienteDetallePage() {
                   <StatusBadge type="cliente" value={cliente.estado} />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Socio Responsable</p>
-                  <p className="font-medium">{cliente.socioResponsable === 'socioA' ? 'Socio A' : 'Socio B'}</p>
+                  <p className="text-sm text-muted-foreground">Responsable operativo</p>
+                  <p className="font-medium">{getOperatorLabel(cliente.socioResponsable)}</p>
                 </div>
                 <InfoField icon={Calendar} label="Fecha Primer Contacto" value={formatFecha(cliente.createdAt)} />
               </div>
@@ -449,6 +471,55 @@ export default function ClienteDetallePage() {
                 </ScrollArea>
               ) : (
                 <EmptyState message="No hay cotizaciones registradas" />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Facturas */}
+        <TabsContent value="facturas">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Facturas</CardTitle>
+                <CardDescription>{cliente.facturas?.length ?? 0} factura(s) registrada(s)</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {cliente.facturas && cliente.facturas.length > 0 ? (
+                <ScrollArea className="max-h-96">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Número</TableHead>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cliente.facturas.map((fac) => {
+                        const subtotal = fac.items.reduce((sum, item) => sum + item.subtotal, 0)
+                        const descuentoVal = subtotal * (fac.descuento / 100)
+                        const conDescuento = subtotal - descuentoVal
+                        const ivaVal = conDescuento * (fac.iva / 100)
+                        const total = conDescuento + ivaVal
+                        return (
+                          <TableRow key={fac.id}>
+                            <TableCell className="font-medium">{fac.numero}</TableCell>
+                            <TableCell>{formatFecha(fac.fechaEmision)}</TableCell>
+                            <TableCell>
+                              <StatusBadge type="factura" value={fac.estado} />
+                            </TableCell>
+                            <TableCell className="text-right font-medium">{formatCOP(total)}</TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              ) : (
+                <EmptyState message="No hay facturas registradas" />
               )}
             </CardContent>
           </Card>
@@ -590,7 +661,7 @@ export default function ClienteDetallePage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Fecha</TableHead>
-                        <TableHead>Socio</TableHead>
+                        <TableHead>Responsable</TableHead>
                         <TableHead>Descripción</TableHead>
                         <TableHead>Observaciones</TableHead>
                       </TableRow>
@@ -599,7 +670,7 @@ export default function ClienteDetallePage() {
                       {allMantenimientos.map((mant) => (
                         <TableRow key={mant.id}>
                           <TableCell className="whitespace-nowrap">{formatFecha(mant.fecha)}</TableCell>
-                          <TableCell>{mant.socio === 'socioA' ? 'Socio A' : 'Socio B'}</TableCell>
+                          <TableCell>{getOperatorLabel(mant.socio)}</TableCell>
                           <TableCell className="max-w-xs truncate">{mant.descripcion}</TableCell>
                           <TableCell className="max-w-xs truncate text-muted-foreground">
                             {mant.observaciones || '—'}
@@ -702,7 +773,7 @@ export default function ClienteDetallePage() {
                               {TIPOS_INTERACCION_LABELS[inter.tipo] || inter.tipo}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {formatFecha(inter.fecha)} · {inter.socio === 'socioA' ? 'Socio A' : 'Socio B'}
+                              {formatFecha(inter.fecha)} · {getOperatorLabel(inter.socio)}
                             </span>
                           </div>
                           <p className="text-sm">{inter.descripcion}</p>
@@ -751,7 +822,7 @@ export default function ClienteDetallePage() {
                       {cliente.tareas.map((tarea) => (
                         <TableRow key={tarea.id}>
                           <TableCell className="font-medium">{tarea.titulo}</TableCell>
-                          <TableCell>{tarea.asignadoA === 'socioA' ? 'Socio A' : tarea.asignadoA === 'socioB' ? 'Socio B' : tarea.asignadoA}</TableCell>
+                          <TableCell>{getOperatorLabel(tarea.asignadoA)}</TableCell>
                           <TableCell>
                             <Badge variant="secondary" className={`border-0 ${PRIORIDAD_COLORS[tarea.prioridad as keyof typeof PRIORIDAD_COLORS] || ''}`}>
                               {tarea.prioridad}
@@ -795,7 +866,7 @@ export default function ClienteDetallePage() {
                         <TableHead>Nombre</TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead>Fecha</TableHead>
-                        <TableHead>Socio</TableHead>
+                        <TableHead>Responsable</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -805,7 +876,7 @@ export default function ClienteDetallePage() {
                           <TableCell className="font-medium">{doc.nombre}</TableCell>
                           <TableCell className="capitalize">{doc.tipo.replace(/_/g, ' ').toLowerCase()}</TableCell>
                           <TableCell>{doc.fechaDocumento ? formatFecha(doc.fechaDocumento) : '—'}</TableCell>
-                          <TableCell>{doc.socio === 'socioA' ? 'Socio A' : 'Socio B'}</TableCell>
+                          <TableCell>{getOperatorLabel(doc.socio)}</TableCell>
                           <TableCell>
                             <Button
                               variant="ghost"

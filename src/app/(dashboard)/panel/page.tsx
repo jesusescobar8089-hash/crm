@@ -14,6 +14,9 @@ import {
   Package,
   CheckSquare,
   Droplets,
+  Receipt,
+  FolderOpen,
+  ClipboardList,
 } from 'lucide-react'
 import {
   BarChart,
@@ -34,6 +37,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { formatCOP, formatFecha, formatFechaHora } from '@/lib/format'
+import { getOperatorLabel } from '@/lib/operator'
 
 interface DashboardData {
   metrics: {
@@ -83,6 +87,7 @@ interface DashboardData {
     socio: string
     modulo: string
     accion: string
+    entidadId: string | null
     detalle: string | null
     createdAt: string
   }>
@@ -108,31 +113,55 @@ const CHART_COLORS = {
   perdidas: '#ef4444',
 }
 
-const tooltipStyle = {
-  borderRadius: '0.625rem',
-  border: '1px solid var(--border)',
-  background: 'var(--card)',
-  color: 'var(--card-foreground)',
-  boxShadow: '0 12px 30px oklch(0 0 0 / 12%)',
+const MODULE_META = {
+  clientes: { label: 'Clientes', href: '/clientes', icon: Users },
+  cotizaciones: { label: 'Cotizaciones', href: '/cotizaciones', icon: FileText },
+  facturas: { label: 'Facturas', href: '/facturas', icon: Receipt },
+  monitoreos: { label: 'Monitoreos', href: '/monitoreos', icon: Wrench },
+  mantenimientos: { label: 'Mantenimientos', href: '/monitoreos', icon: Wrench },
+  inventario: { label: 'Inventario', href: '/inventario', icon: Package },
+  finanzas: { label: 'Finanzas', href: '/finanzas', icon: DollarSign },
+  documentos: { label: 'Documentos', href: '/documentos', icon: FolderOpen },
+  tareas: { label: 'Tareas', href: '/tareas', icon: CheckSquare },
+  bitacora: { label: 'Bitácora', href: '/bitacora', icon: ClipboardList },
+} as const
+
+function getModuleMeta(modulo: string) {
+  const key = modulo.toLowerCase() as keyof typeof MODULE_META
+  return MODULE_META[key] ?? {
+    label: modulo.replaceAll('_', ' '),
+    href: '/bitacora',
+    icon: ClipboardList,
+  }
+}
+
+function getEventHref(evento: DashboardData['actividadReciente'][number]) {
+  const meta = getModuleMeta(evento.modulo)
+  if (!evento.entidadId) return meta.href
+
+  const key = evento.modulo.toLowerCase()
+  if (key === 'clientes') return `/clientes/${evento.entidadId}`
+  if (key === 'cotizaciones') return `/cotizaciones/${evento.entidadId}`
+  if (key === 'facturas') return `/facturas/${evento.entidadId}`
+
+  return meta.href
+}
+
+function getAccessLabel(socio: string) {
+  return getOperatorLabel(socio)
 }
 
 function getReadableAction(evento: DashboardData['actividadReciente'][number]) {
-  const modulo = evento.modulo.replace('_', ' ')
-  const accion = evento.accion
+  const modulo = getModuleMeta(evento.modulo).label.toLowerCase()
+  const accion = evento.accion.toLowerCase()
 
   if (accion.includes('crear')) return `Creó ${modulo}`
   if (accion.includes('actualizar') || accion.includes('editar')) return `Actualizó ${modulo}`
   if (accion.includes('eliminar')) return `Eliminó ${modulo}`
-  if (accion.includes('cambiar_estado')) return `Cambió estado`
-  if (accion.includes('subir')) return `Subió documento`
+  if (accion.includes('cambiar_estado')) return 'Cambió estado'
+  if (accion.includes('subir')) return 'Subió documento'
 
   return accion.replaceAll('_', ' ')
-}
-
-function getSocioAvatarClass(socio: string) {
-  return socio === 'socioB'
-    ? 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300'
-    : 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
 }
 
 export default function DashboardPage() {
@@ -202,7 +231,7 @@ export default function DashboardPage() {
 
       {/* Alerts section */}
       {totalAlerts > 0 && (
-        <Card className="border-amber-200 dark:border-amber-900/50">
+        <Card className="border-amber-200 dark:border-amber-900/50 overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -211,28 +240,27 @@ export default function DashboardPage() {
                 {totalAlerts}
               </Badge>
             </div>
-            <CardDescription>Elementos que requieren atención</CardDescription>
+            <CardDescription>Elementos que requieren atencion</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="max-h-80">
-              <div className="space-y-4">
-                {/* Clients without activity */}
+          <CardContent className="pt-0">
+            <ScrollArea className="max-h-72 pr-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {alerts.clientesSinActividad.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <Users className="h-3.5 w-3.5" />
-                      Clientes sin actividad reciente
+                  <div className="space-y-2 min-w-0">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Users className="h-3 w-3" />
+                      Sin actividad
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {alerts.clientesSinActividad.map((c) => (
                         <Link key={c.id} href={`/clientes/${c.id}`}
-                          className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{c.nombre}</span>
+                          className="flex items-center justify-between gap-2 text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer min-w-0">
+                          <div className="flex items-center gap-1.5 min-w-0">
                             <StatusBadge type="cliente" value={c.estado} />
+                            <span className="font-medium truncate">{c.nombre}</span>
                           </div>
-                          <span className="text-muted-foreground text-xs">
-                            Última interacción: {c.interacciones[0] ? formatFecha(c.interacciones[0].fecha) : 'Sin registros'}
+                          <span className="text-muted-foreground text-[11px] shrink-0">
+                            {c.interacciones[0] ? formatFecha(c.interacciones[0].fecha) : '—'}
                           </span>
                         </Link>
                       ))}
@@ -240,28 +268,24 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {/* Upcoming/overdue maintenance */}
                 {alerts.monitoreosMantenimiento.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <Wrench className="h-3.5 w-3.5" />
-                      Mantenimientos próximos o vencidos
+                  <div className="space-y-2 min-w-0">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Wrench className="h-3 w-3" />
+                      Mantenimiento
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {alerts.monitoreosMantenimiento.map((m) => {
                         const isOverdue = m.proximoMantenimiento && new Date(m.proximoMantenimiento) < new Date()
                         return (
                           <Link key={m.id} href="/monitoreos"
-                            className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              <Badge variant={isOverdue ? 'destructive' : 'secondary'} className="text-xs">
-                                {isOverdue ? 'Vencido' : 'Próximo'}
-                              </Badge>
-                              <span className="font-medium">{m.cliente.nombre}</span>
-                              <span className="text-muted-foreground">({m.kitId ?? 'Sin kit'})</span>
+                            className="flex items-center justify-between gap-2 text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isOverdue ? 'bg-red-500' : 'bg-amber-500'}`} />
+                              <span className="font-medium truncate">{m.cliente.nombre}</span>
                             </div>
-                            <span className="text-muted-foreground text-xs">
-                              {m.proximoMantenimiento ? formatFecha(m.proximoMantenimiento) : 'Sin fecha'}
+                            <span className="text-muted-foreground text-[11px] shrink-0">
+                              {m.proximoMantenimiento ? formatFecha(m.proximoMantenimiento) : '—'}
                             </span>
                           </Link>
                         )
@@ -270,20 +294,19 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {/* Low stock */}
                 {alerts.inventarioBajo.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <Package className="h-3.5 w-3.5" />
-                      Inventario bajo mínimo
+                  <div className="space-y-2 min-w-0">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Package className="h-3 w-3" />
+                      Stock bajo
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {alerts.inventarioBajo.map((item) => (
                         <Link key={item.id} href="/inventario"
-                          className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
-                          <span className="font-medium">{item.nombre}</span>
-                          <span className="text-red-600 dark:text-red-400 text-xs font-medium">
-                            {item.stockActual} / {item.stockMinimo} {item.unidad}
+                          className="flex items-center justify-between gap-2 text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer min-w-0">
+                          <span className="font-medium truncate">{item.nombre}</span>
+                          <span className="text-red-600 dark:text-red-400 text-[11px] font-medium shrink-0">
+                            {item.stockActual}/{item.stockMinimo} {item.unidad}
                           </span>
                         </Link>
                       ))}
@@ -291,25 +314,22 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {/* Overdue tasks */}
                 {alerts.tareasVencidas.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <CheckSquare className="h-3.5 w-3.5" />
+                  <div className="space-y-2 min-w-0">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <CheckSquare className="h-3 w-3" />
                       Tareas vencidas
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {alerts.tareasVencidas.map((t) => (
                         <Link key={t.id} href="/tareas"
-                          className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{t.titulo}</span>
-                            {t.cliente && (
-                              <span className="text-muted-foreground">({t.cliente.nombre})</span>
-                            )}
+                          className="flex items-center justify-between gap-2 text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer min-w-0">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
+                            <span className="font-medium truncate">{t.titulo}</span>
                           </div>
-                          <span className="text-red-600 dark:text-red-400 text-xs">
-                            Vencida: {t.fechaLimite ? formatFecha(t.fechaLimite) : 'Sin fecha'}
+                          <span className="text-red-600 dark:text-red-400 text-[11px] shrink-0">
+                            {t.fechaLimite ? formatFecha(t.fechaLimite) : '—'}
                           </span>
                         </Link>
                       ))}
@@ -383,7 +403,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Cotizaciones chart */}
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-base">Cotizaciones por Mes</CardTitle>
           <CardDescription>Enviadas vs Aceptadas vs Perdidas - Últimos 6 meses</CardDescription>
@@ -414,40 +434,43 @@ export default function DashboardPage() {
           </div>
           <CardDescription>Últimos eventos registrados en la bitácora</CardDescription>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="max-h-72">
+        <CardContent className="overflow-hidden px-0 pb-0">
+          <ScrollArea className="h-96 overflow-hidden px-6 pb-6">
             {actividadReciente.length > 0 ? (
-              <div className="space-y-3">
-                {actividadReciente.map((evento) => (
-                  <div
-                    key={evento.id}
-                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-sky-100 dark:bg-sky-900/30 mt-0.5 shrink-0">
-                      <span className="text-xs font-bold text-sky-600 dark:text-sky-400">
-                        {evento.socio.replace('socio', '').toUpperCase()}
+              <div className="space-y-2">
+                {actividadReciente.map((evento) => {
+                  const moduleMeta = getModuleMeta(evento.modulo)
+                  const ModuleIcon = moduleMeta.icon
+
+                  return (
+                    <Link
+                      key={evento.id}
+                      href={getEventHref(evento)}
+                      className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-lg border bg-card/60 p-3 transition-colors hover:bg-muted/50"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+                        <ModuleIcon className="h-4 w-4" />
                       </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {evento.modulo}
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs capitalize">
-                          {evento.accion.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      {evento.detalle && (
-                        <p className="text-sm text-muted-foreground mt-1 truncate">
-                          {evento.detalle}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatFechaHora(evento.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                      <span className="min-w-0 space-y-1">
+                        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-sm font-semibold leading-5">{moduleMeta.label}</span>
+                          <span className="text-xs leading-5 text-muted-foreground">{getReadableAction(evento)}</span>
+                        </span>
+                        {evento.detalle && (
+                          <span className="block break-words text-sm leading-5 text-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden">
+                            {evento.detalle}
+                          </span>
+                        )}
+                        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="h-5 rounded-md px-1.5 text-[11px] font-medium">
+                            {getAccessLabel(evento.socio)}
+                          </Badge>
+                          <span>{formatFechaHora(evento.createdAt)}</span>
+                        </span>
+                      </span>
+                    </Link>
+                  )
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">

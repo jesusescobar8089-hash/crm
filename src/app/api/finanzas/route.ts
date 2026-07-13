@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { PRIMARY_OPERATOR_ID } from '@/lib/operator'
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,20 +67,18 @@ async function getResumen(mesParam: string | null, anioParam: string | null) {
     .reduce((sum, t) => sum + t.monto, 0)
   const utilidadAnio = ingresosAnio - gastosAnio
 
-  // Balance por socio (all time)
-  const socios = ['socioA', 'socioB']
-  const balanceSocios = socios.map((socio) => {
-    const aportado = allTransactions
-      .filter((t) => t.tipo === 'APORTE_SOCIO' && t.socio === socio)
-      .reduce((sum, t) => sum + t.monto, 0)
-    const retirado = allTransactions
-      .filter((t) => t.tipo === 'RETIRO_SOCIO' && t.socio === socio)
-      .reduce((sum, t) => sum + t.monto, 0)
-    return { socio, aportado, retirado, saldo: aportado - retirado }
-  })
+  // Balance del socio principal. Los valores antiguos socioA/socioB se consolidan.
+  const operatorAliases = [PRIMARY_OPERATOR_ID, 'socioA', 'socioB']
+  const aportado = allTransactions
+    .filter((t) => t.tipo === 'APORTE_SOCIO' && operatorAliases.includes(t.socio))
+    .reduce((sum, t) => sum + t.monto, 0)
+  const retirado = allTransactions
+    .filter((t) => t.tipo === 'RETIRO_SOCIO' && operatorAliases.includes(t.socio))
+    .reduce((sum, t) => sum + t.monto, 0)
+  const balanceSocios = [{ socio: PRIMARY_OPERATOR_ID, aportado, retirado, saldo: aportado - retirado }]
 
   const utilidadTotal = utilidadAnio
-  const utilidadPorSocio = utilidadTotal / 2
+  const utilidadPorSocio = utilidadTotal
 
   // Chart: Ingresos vs Gastos por mes (last 12 months from selected year)
   const mesesData: { mes: string; ingresos: number; gastos: number }[] = []
@@ -121,6 +120,28 @@ async function getResumen(mesParam: string | null, anioParam: string | null) {
     ingresosCategoria.push({ categoria, monto })
   })
 
+  const aportesMes = mesTransactions
+    .filter((t) => t.tipo === 'APORTE_SOCIO')
+    .reduce((sum, t) => sum + t.monto, 0)
+  const retirosMes = mesTransactions
+    .filter((t) => t.tipo === 'RETIRO_SOCIO')
+    .reduce((sum, t) => sum + t.monto, 0)
+  const cierreMensual = {
+    ingresos: ingresosMes,
+    gastosOperativos: gastosMes,
+    utilidadOperativa: utilidadMes,
+    utilidadPorSocio: utilidadMes,
+    socios: [
+      {
+        socio: PRIMARY_OPERATOR_ID,
+        gastosAsignados: gastosMes,
+        aportes: aportesMes,
+        retiros: retirosMes,
+        saldoCierre: utilidadMes + aportesMes - retirosMes,
+      },
+    ],
+  }
+
   return NextResponse.json({
     ingresosMes,
     gastosMes,
@@ -130,6 +151,7 @@ async function getResumen(mesParam: string | null, anioParam: string | null) {
     utilidadAnio,
     balanceSocios,
     utilidadPorSocio,
+    cierreMensual,
     chartMeses: mesesData,
     chartGastosCategoria: gastosCategoria,
     chartIngresosCategoria: ingresosCategoria,

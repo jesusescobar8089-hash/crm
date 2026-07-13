@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { PRIMARY_OPERATOR_ID } from '@/lib/operator'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,8 +16,10 @@ export async function GET(request: NextRequest) {
       where.estado = estado
     }
     if (asignadoA && asignadoA !== 'all') {
-      if (asignadoA === 'ambos') {
-        where.asignadoA = { in: ['socioA', 'socioB', 'ambos'] }
+      if (asignadoA === PRIMARY_OPERATOR_ID) {
+        where.asignadoA = { in: [PRIMARY_OPERATOR_ID, 'socioA', 'socioB', 'ambos'] }
+      } else if (asignadoA === 'ambos') {
+        where.asignadoA = { in: ['socioA', 'socioB', 'ambos', PRIMARY_OPERATOR_ID] }
       } else {
         where.asignadoA = { in: [asignadoA, 'ambos'] }
       }
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
       data: {
         titulo: titulo.trim(),
         descripcion: descripcion || null,
-        asignadoA: asignadoA || 'socioA',
+        asignadoA: asignadoA || PRIMARY_OPERATOR_ID,
         prioridad: prioridad || 'MEDIA',
         fechaLimite: fechaLimite ? new Date(fechaLimite) : null,
         estado: estado || 'PENDIENTE',

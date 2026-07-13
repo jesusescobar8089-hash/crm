@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { calculateTaxIncludedTotals } from '@/lib/totals'
 
 // POST /api/cotizaciones/[id]/convertir - Convert ACEPTADA quotation to INGRESO transaction
 export async function POST(
@@ -31,12 +32,7 @@ export async function POST(
       )
     }
 
-    // Calculate total
-    const subtotalGeneral = cotizacion.items.reduce((sum, item) => sum + item.subtotal, 0)
-    const descuentoMonto = subtotalGeneral * (cotizacion.descuento / 100)
-    const subtotalConDescuento = subtotalGeneral - descuentoMonto
-    const ivaMonto = subtotalConDescuento * (cotizacion.iva / 100)
-    const total = subtotalConDescuento + ivaMonto
+    const { total } = calculateTaxIncludedTotals(cotizacion.items, cotizacion.descuento, cotizacion.iva)
 
     // Create INGRESO transaction
     const transaccion = await db.transaccion.create({

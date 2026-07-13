@@ -8,6 +8,7 @@ import {
   Home,
   Users,
   FileText,
+  Receipt,
   Wrench,
   Package,
   DollarSign,
@@ -18,7 +19,6 @@ import {
   Sun,
   Moon,
   LogOut,
-  Droplets,
   ChevronRight,
 } from 'lucide-react'
 import { useAuthStore } from '@/lib/auth-store'
@@ -63,6 +63,7 @@ const navItems = [
   { title: 'Panel', href: '/panel', icon: Home },
   { title: 'Clientes', href: '/clientes', icon: Users },
   { title: 'Cotizaciones', href: '/cotizaciones', icon: FileText },
+  { title: 'Facturas', href: '/facturas', icon: Receipt },
   { title: 'Monitoreos', href: '/monitoreos', icon: Wrench },
   { title: 'Inventario', href: '/inventario', icon: Package },
   { title: 'Finanzas', href: '/finanzas', icon: DollarSign },
@@ -125,9 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center animate-pulse">
-            <Droplets className="w-6 h-6 text-white" />
-          </div>
+          <img src="/brand/image2.png" alt="AgroEve" className="h-12 w-auto animate-pulse" />
           <p className="text-sm text-muted-foreground">Cargando...</p>
         </div>
       </div>
@@ -154,13 +153,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar variant="sidebar" collapsible="offcanvas" className="border-r bg-sidebar">
         <SidebarHeader className="p-4 pb-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-background">
-              <Droplets className="h-5 w-5 text-primary" />
+            <div className="flex h-10 min-w-0 items-center">
+              <img src="/brand/image2.png" alt="AgroEve" className="h-9 w-auto max-w-36 object-contain" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-base font-semibold tracking-tight">
-                AgroEve
-              </span>
+            <div className="flex min-w-0 flex-col">
               <span className="text-[11px] leading-none text-muted-foreground">
                 Gestión Interna
               </span>

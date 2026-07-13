@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { formatFecha } from '@/lib/format'
 import { useAuthStore } from '@/lib/auth-store'
+import { PRIMARY_OPERATOR_ID } from '@/lib/operator'
 import {
   ESTADO_TAREA_COLORS,
   ESTADO_TAREA_LABELS,
@@ -69,9 +70,10 @@ interface Tarea {
 }
 
 const ASIGNADO_LABELS: Record<string, string> = {
-  socioA: 'Socio A',
-  socioB: 'Socio B',
-  ambos: 'Ambos',
+  socioPrincipal: 'Socio principal',
+  socioA: 'Socio principal',
+  socioB: 'Socio principal',
+  ambos: 'Socio principal',
 }
 
 const PRIORIDAD_LABELS: Record<string, string> = {
@@ -309,9 +311,7 @@ export default function TareasPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="socioA">Socio A</SelectItem>
-              <SelectItem value="socioB">Socio B</SelectItem>
-              <SelectItem value="ambos">Ambos</SelectItem>
+              <SelectItem value={PRIMARY_OPERATOR_ID}>Socio principal</SelectItem>
             </SelectContent>
           </Select>
           <Select value={prioridadFilter} onValueChange={setPrioridadFilter}>

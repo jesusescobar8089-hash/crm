@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/lib/auth-store'
+import { numberInputValue, parseNumberInput } from '@/lib/numbers'
 import { CATEGORIA_INVENTARIO_LABELS } from '@/types'
 import {
   Dialog,
@@ -31,8 +32,8 @@ interface InventarioItem {
   stockActual: number
   stockMinimo: number
   costoUnitario: number
-  proveedor: string
-  notas: string
+  proveedor: string | null
+  notas: string | null
 }
 
 interface ItemFormProps {
@@ -150,8 +151,8 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
                 id="stockActual"
                 type="number"
                 min="0"
-                value={form.stockActual}
-                onChange={(e) => updateField('stockActual', Number(e.target.value))}
+                value={numberInputValue(form.stockActual)}
+                onChange={(e) => updateField('stockActual', parseNumberInput(e.target.value))}
               />
             </div>
             <div className="grid gap-2">
@@ -160,8 +161,8 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
                 id="stockMinimo"
                 type="number"
                 min="0"
-                value={form.stockMinimo}
-                onChange={(e) => updateField('stockMinimo', Number(e.target.value))}
+                value={numberInputValue(form.stockMinimo)}
+                onChange={(e) => updateField('stockMinimo', parseNumberInput(e.target.value))}
               />
             </div>
             <div className="grid gap-2">
@@ -170,8 +171,8 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
                 id="costoUnitario"
                 type="number"
                 min="0"
-                value={form.costoUnitario}
-                onChange={(e) => updateField('costoUnitario', Number(e.target.value))}
+                value={numberInputValue(form.costoUnitario)}
+                onChange={(e) => updateField('costoUnitario', parseNumberInput(e.target.value))}
               />
             </div>
           </div>
@@ -180,7 +181,7 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
             <Label htmlFor="proveedor">Proveedor</Label>
             <Input
               id="proveedor"
-              value={form.proveedor}
+              value={form.proveedor ?? ''}
               onChange={(e) => updateField('proveedor', e.target.value)}
               placeholder="Nombre del proveedor"
             />
@@ -190,7 +191,7 @@ export function ItemForm({ open, onOpenChange, item, onSuccess }: ItemFormProps)
             <Label htmlFor="notas">Notas</Label>
             <Textarea
               id="notas"
-              value={form.notas}
+              value={form.notas ?? ''}
               onChange={(e) => updateField('notas', e.target.value)}
               placeholder="Notas adicionales"
               rows={3}

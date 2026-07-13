@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/shared/status-badge'
 import { ClienteForm } from '@/components/clientes/cliente-form'
 import { ESTADO_CLIENTE_LABELS, type EstadoCliente } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getOperatorLabel } from '@/lib/operator'
 
 interface Cliente {
   id: string
@@ -100,10 +101,10 @@ export default function ClientesPage() {
     },
     {
       accessorKey: 'socioResponsable',
-      header: 'Socio',
+      header: 'Responsable',
       cell: ({ row }) => {
         const val = row.getValue('socioResponsable') as string
-        return val === 'socioA' ? 'Socio A' : val === 'socioB' ? 'Socio B' : val
+        return getOperatorLabel(val)
       },
       filterFn: (row, _columnId, filterValue) => {
         if (filterValue === 'all') return true

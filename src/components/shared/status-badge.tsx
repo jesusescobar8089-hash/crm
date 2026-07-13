@@ -7,18 +7,21 @@ import {
   ESTADO_MONITOREO_COLORS,
   ESTADO_TAREA_COLORS,
   PRIORIDAD_COLORS,
+  ESTADO_FACTURA_COLORS,
   ESTADO_CLIENTE_LABELS,
   ESTADO_COTIZACION_LABELS,
   ESTADO_MONITOREO_LABELS,
   ESTADO_TAREA_LABELS,
+  ESTADO_FACTURA_LABELS,
   type EstadoCliente,
   type EstadoCotizacion,
   type EstadoMonitoreo,
   type EstadoTarea,
   type PrioridadTarea,
+  type EstadoFactura,
 } from '@/types'
 
-type StatusType = 'cliente' | 'cotizacion' | 'monitoreo' | 'tarea' | 'prioridad'
+type StatusType = 'cliente' | 'cotizacion' | 'monitoreo' | 'tarea' | 'prioridad' | 'factura'
 
 interface StatusBadgeProps {
   type: StatusType
@@ -32,6 +35,7 @@ const colorMaps: Record<StatusType, Record<string, string>> = {
   monitoreo: ESTADO_MONITOREO_COLORS,
   tarea: ESTADO_TAREA_COLORS,
   prioridad: PRIORIDAD_COLORS,
+  factura: ESTADO_FACTURA_COLORS,
 }
 
 const labelMaps: Record<StatusType, Record<string, string>> = {
@@ -44,6 +48,7 @@ const labelMaps: Record<StatusType, Record<string, string>> = {
     MEDIA: 'Media',
     BAJA: 'Baja',
   },
+  factura: ESTADO_FACTURA_LABELS,
 }
 
 const dotColorMaps: Record<StatusType, Record<string, string>> = {
@@ -58,13 +63,13 @@ const dotColorMaps: Record<StatusType, Record<string, string>> = {
     ENVIADA: 'bg-sky-500',
     EN_REVISION: 'bg-amber-500',
     ACEPTADA: 'bg-emerald-500',
-    PERDIDA: 'bg-red-500',
+    RECHAZADA: 'bg-red-500',
     VENCIDA: 'bg-red-500',
   },
   monitoreo: {
     ACTIVO: 'bg-emerald-500',
-    PAUSADO: 'bg-amber-500',
-    INACTIVO: 'bg-red-500',
+    EN_MANTENIMIENTO: 'bg-amber-500',
+    SUSPENDIDO: 'bg-red-500',
   },
   tarea: {
     PENDIENTE: 'bg-sky-500',
@@ -75,6 +80,14 @@ const dotColorMaps: Record<StatusType, Record<string, string>> = {
     ALTA: 'bg-red-500',
     MEDIA: 'bg-amber-500',
     BAJA: 'bg-sky-500',
+  },
+  factura: {
+    BORRADOR: 'bg-muted-foreground',
+    PENDIENTE: 'bg-sky-500',
+    EMITIDA: 'bg-sky-500',
+    PAGADA: 'bg-emerald-500',
+    VENCIDA: 'bg-red-500',
+    ANULADA: 'bg-red-500',
   },
 }
 

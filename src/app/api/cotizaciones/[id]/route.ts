@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { calculateTaxIncludedTotals } from '@/lib/totals'
+import { normalizeCommercialItem, type CommercialItemInput } from '@/lib/commercial-docs'
 
 // GET /api/cotizaciones/[id] - Get quotation with cliente and items
 export async function GET(
@@ -21,20 +23,9 @@ export async function GET(
       return NextResponse.json({ error: 'Cotización no encontrada' }, { status: 404 })
     }
 
-    // Calculate totals
-    const subtotalGeneral = cotizacion.items.reduce((sum, item) => sum + item.subtotal, 0)
-    const descuentoMonto = subtotalGeneral * (cotizacion.descuento / 100)
-    const subtotalConDescuento = subtotalGeneral - descuentoMonto
-    const ivaMonto = subtotalConDescuento * (cotizacion.iva / 100)
-    const total = subtotalConDescuento + ivaMonto
-
     return NextResponse.json({
       ...cotizacion,
-      subtotalGeneral,
-      descuentoMonto,
-      subtotalConDescuento,
-      ivaMonto,
-      total,
+      ...calculateTaxIncludedTotals(cotizacion.items, cotizacion.descuento, cotizacion.iva),
     })
   } catch (error) {
     console.error('Error fetching cotizacion:', error)
@@ -50,7 +41,25 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const { socio, clienteId, fechaEmision, fechaVencimiento, descuento, iva, observaciones, notasInternas, items } = body
+    const {
+      socio,
+      clienteId,
+      fechaEmision,
+      fechaVencimiento,
+      descuento,
+      iva,
+      observaciones,
+      notasInternas,
+      moneda,
+      vendedor,
+      formaPago,
+      tiempoEntrega,
+      garantia,
+      condiciones,
+      aceptacionCliente,
+      legalJson,
+      items,
+    } = body
 
     const existing = await db.cotizacion.findUnique({ where: { id } })
     if (!existing) {
@@ -75,18 +84,20 @@ export async function PATCH(
     if (fechaVencimiento !== undefined) updateData.fechaVencimiento = fechaVencimiento ? new Date(fechaVencimiento) : null
     if (descuento !== undefined) updateData.descuento = descuento
     if (iva !== undefined) updateData.iva = iva
+    if (moneda !== undefined) updateData.moneda = moneda
+    if (vendedor !== undefined) updateData.vendedor = vendedor
+    if (formaPago !== undefined) updateData.formaPago = formaPago
+    if (tiempoEntrega !== undefined) updateData.tiempoEntrega = tiempoEntrega
+    if (garantia !== undefined) updateData.garantia = garantia
+    if (condiciones !== undefined) updateData.condiciones = condiciones
+    if (aceptacionCliente !== undefined) updateData.aceptacionCliente = aceptacionCliente
+    if (legalJson !== undefined) updateData.legalJson = legalJson
     if (observaciones !== undefined) updateData.observaciones = observaciones
     if (notasInternas !== undefined) updateData.notasInternas = notasInternas
 
     if (items) {
       updateData.items = {
-        create: items.map((item: { descripcion: string; cantidad: number; precioUnit: number }, idx: number) => ({
-          descripcion: item.descripcion,
-          cantidad: item.cantidad,
-          precioUnit: item.precioUnit,
-          subtotal: item.cantidad * item.precioUnit,
-          orden: idx,
-        })),
+        create: items.map((item: CommercialItemInput, idx: number) => normalizeCommercialItem(item, idx, iva ?? existing.iva)),
       }
     }
 

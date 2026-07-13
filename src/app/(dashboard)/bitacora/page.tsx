@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { formatFechaHora } from '@/lib/format'
+import { getOperatorLabel } from '@/lib/operator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -78,8 +79,6 @@ const MODULO_LABELS: Record<string, string> = {
   documentos: 'Documentos',
   tareas: 'Tareas',
 }
-
-const SOCIOS = ['socioA', 'socioB']
 
 export default function BitacoraPage() {
   const [events, setEvents] = useState<BitacoraEvento[]>([])
@@ -243,12 +242,7 @@ export default function BitacoraPage() {
               <SelectValue placeholder="Socio" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos los socios</SelectItem>
-              {SOCIOS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s === 'socioA' ? 'Socio A' : 'Socio B'}
-                </SelectItem>
-              ))}
+              <SelectItem value="all">Todos los registros</SelectItem>
             </SelectContent>
           </Select>
 
@@ -313,7 +307,7 @@ export default function BitacoraPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-44">Fecha/Hora</TableHead>
-              <TableHead className="w-28">Socio</TableHead>
+              <TableHead className="w-32">Responsable</TableHead>
               <TableHead className="w-36">Módulo</TableHead>
               <TableHead className="w-40">Acción</TableHead>
               <TableHead>Detalle</TableHead>
@@ -333,7 +327,7 @@ export default function BitacoraPage() {
                     {formatFechaHora(event.createdAt)}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {event.socio === 'socioA' ? 'Socio A' : event.socio === 'socioB' ? 'Socio B' : event.socio}
+                    {getOperatorLabel(event.socio)}
                   </TableCell>
                   <TableCell>
                     <Badge

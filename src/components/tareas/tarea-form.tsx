@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuthStore } from '@/lib/auth-store'
-import { ESTADO_TAREA_LABELS, PRIORIDAD_COLORS, ESTADO_TAREA_COLORS } from '@/types'
+import { OPERATOR_OPTIONS, PRIMARY_OPERATOR_ID, getOperatorValue } from '@/lib/operator'
+import { ESTADO_TAREA_LABELS } from '@/types'
 import type { EstadoTarea, PrioridadTarea } from '@/types'
 import {
   Dialog,
@@ -36,12 +37,12 @@ import {
 
 const tareaSchema = z.object({
   titulo: z.string().min(1, 'El título es obligatorio'),
-  descripcion: z.string().optional().default(''),
-  asignadoA: z.enum(['socioA', 'socioB', 'ambos']).default('socioA'),
-  prioridad: z.enum(['ALTA', 'MEDIA', 'BAJA']).default('MEDIA'),
-  fechaLimite: z.string().optional().default(''),
-  estado: z.enum(['PENDIENTE', 'EN_PROGRESO', 'COMPLETADA']).default('PENDIENTE'),
-  clienteId: z.string().optional().default(''),
+  descripcion: z.string(),
+  asignadoA: z.enum(['socioPrincipal', 'socioA', 'socioB', 'ambos']),
+  prioridad: z.enum(['ALTA', 'MEDIA', 'BAJA']),
+  fechaLimite: z.string(),
+  estado: z.enum(['PENDIENTE', 'EN_PROGRESO', 'COMPLETADA']),
+  clienteId: z.string(),
 })
 
 type TareaFormValues = z.infer<typeof tareaSchema>
@@ -70,12 +71,6 @@ interface TareaFormProps {
   onSuccess: () => void
 }
 
-const ASIGNADO_LABELS: Record<string, string> = {
-  socioA: 'Socio A',
-  socioB: 'Socio B',
-  ambos: 'Ambos',
-}
-
 const PRIORIDAD_LABELS: Record<string, string> = {
   ALTA: 'Alta',
   MEDIA: 'Media',
@@ -93,7 +88,7 @@ export function TareaForm({ open, onOpenChange, tarea, onSuccess }: TareaFormPro
     defaultValues: {
       titulo: '',
       descripcion: '',
-      asignadoA: 'socioA',
+      asignadoA: PRIMARY_OPERATOR_ID,
       prioridad: 'MEDIA',
       fechaLimite: '',
       estado: 'PENDIENTE',
@@ -131,7 +126,7 @@ export function TareaForm({ open, onOpenChange, tarea, onSuccess }: TareaFormPro
         form.reset({
           titulo: tarea.titulo || '',
           descripcion: tarea.descripcion || '',
-          asignadoA: (tarea.asignadoA as 'socioA' | 'socioB' | 'ambos') || 'socioA',
+          asignadoA: getOperatorValue(tarea.asignadoA) as TareaFormValues['asignadoA'],
           prioridad: (tarea.prioridad as 'ALTA' | 'MEDIA' | 'BAJA') || 'MEDIA',
           fechaLimite: fechaStr,
           estado: (tarea.estado as 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA') || 'PENDIENTE',
@@ -141,7 +136,7 @@ export function TareaForm({ open, onOpenChange, tarea, onSuccess }: TareaFormPro
         form.reset({
           titulo: '',
           descripcion: '',
-          asignadoA: 'socioA',
+          asignadoA: PRIMARY_OPERATOR_ID,
           prioridad: 'MEDIA',
           fechaLimite: '',
           estado: 'PENDIENTE',
@@ -242,7 +237,7 @@ export function TareaForm({ open, onOpenChange, tarea, onSuccess }: TareaFormPro
                 name="asignadoA"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Asignado a</FormLabel>
+                    <FormLabel>Responsable</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -250,9 +245,9 @@ export function TareaForm({ open, onOpenChange, tarea, onSuccess }: TareaFormPro
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(ASIGNADO_LABELS).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>
-                            {label}
+                        {OPERATOR_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

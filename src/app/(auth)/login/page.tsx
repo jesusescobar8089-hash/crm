@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Droplets, Mail, Lock, Loader2, ShieldCheck, Users, Wrench, DollarSign } from 'lucide-react'
+import { Mail, Lock, Loader2, ShieldCheck, Users, Wrench, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/lib/auth-store'
+import { PRIMARY_OPERATOR_EMAIL } from '@/lib/operator'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -65,7 +66,7 @@ export default function LoginPage() {
                 Control interno claro para clientes, inventario y operaciones.
               </h1>
               <p className="max-w-lg text-lg leading-8 text-muted-foreground">
-                AgroEve centraliza la actividad comercial y técnica para que cada socio vea qué requiere atención sin ruido.
+                AgroEve centraliza la actividad comercial y técnica para que el socio principal controle lo que requiere atención.
               </p>
             </div>
             <div className="grid max-w-xl grid-cols-3 gap-4 text-sm">
@@ -89,13 +90,8 @@ export default function LoginPage() {
         <Card className="w-full border bg-card shadow-2xl shadow-primary/10">
           <CardHeader className="space-y-6 border-b pb-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border bg-background shadow-sm">
-                <Droplets className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-2xl font-bold tracking-tight">
-                  AgroEve
-                </CardTitle>
+              <div className="flex min-w-0 flex-col">
+                <img src="/brand/image2.png" alt="AgroEve" className="h-12 w-auto max-w-52 object-contain" />
                 <CardDescription className="mt-1 text-sm">
                   Acceso al sistema interno
                 </CardDescription>
@@ -112,7 +108,7 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="socio@agroeve.co"
+                    placeholder="jesusandres-1991@hotmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
@@ -158,8 +154,7 @@ export default function LoginPage() {
             <div className="mt-6 rounded-lg border bg-muted/30 p-3">
               <p className="text-xs leading-5 text-muted-foreground">
                 <strong className="font-medium text-foreground">Credenciales de prueba</strong><br />
-                socioA@agroeve.co / agroeve2026<br />
-                socioB@agroeve.co / agroeve2026
+                {PRIMARY_OPERATOR_EMAIL} / Aa123456
             </p>
             </div>
           </CardContent>

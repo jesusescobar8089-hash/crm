@@ -18,6 +18,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities'
 import { formatFecha } from '@/lib/format'
 import { useAuthStore } from '@/lib/auth-store'
+import { getOperatorLabel } from '@/lib/operator'
 import {
   ESTADO_TAREA_COLORS,
   ESTADO_TAREA_LABELS,
@@ -40,12 +41,7 @@ interface TareaKanban {
   estado: EstadoTarea
   clienteId?: string | null
   cliente?: { id: string; nombre: string; empresa: string | null } | null
-}
-
-const ASIGNADO_LABELS: Record<string, string> = {
-  socioA: 'Socio A',
-  socioB: 'Socio B',
-  ambos: 'Ambos',
+  createdAt: string
 }
 
 const COLUMNAS: { estado: EstadoTarea; color: string; bgColor: string; headerBorder: string }[] = [
@@ -103,7 +99,7 @@ function KanbanCard({ tarea, onClick }: { tarea: TareaKanban; onClick: () => voi
           <div className="space-y-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <User className="h-3 w-3 shrink-0" />
-              <span>{ASIGNADO_LABELS[tarea.asignadoA] || tarea.asignadoA}</span>
+              <span>{getOperatorLabel(tarea.asignadoA)}</span>
             </div>
 
             {tarea.fechaLimite && (
@@ -152,7 +148,7 @@ function DragOverlayCard({ tarea }: { tarea: TareaKanban }) {
         <div className="text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <User className="h-3 w-3 shrink-0" />
-            <span>{ASIGNADO_LABELS[tarea.asignadoA] || tarea.asignadoA}</span>
+            <span>{getOperatorLabel(tarea.asignadoA)}</span>
           </div>
         </div>
       </CardContent>

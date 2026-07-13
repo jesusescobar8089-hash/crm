@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react'
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends object, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   searchPlaceholder?: string
@@ -57,7 +57,7 @@ function searchableValue(value: unknown): string {
   return ''
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends object, TValue>({
   columns,
   data,
   searchPlaceholder = 'Buscar...',

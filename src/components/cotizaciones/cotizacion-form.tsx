@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,14 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  CommercialItemsEditor,
+  emptyCommercialItem,
+  type CommercialFormItem,
+} from '@/components/shared/commercial-items-editor'
 import { useAuthStore } from '@/lib/auth-store'
-import { formatCOP } from '@/lib/format'
-
-interface CotizacionItem {
-  descripcion: string
-  cantidad: number
-  precioUnit: number
-}
+import { numberInputValue, parseNumberInput } from '@/lib/numbers'
 
 interface ClienteOption {
   id: string
@@ -43,9 +42,16 @@ interface CotizacionFormData {
   fechaVencimiento: string
   descuento: number
   iva: number
+  moneda: string
+  vendedor: string
+  formaPago: string
+  tiempoEntrega: string
   observaciones: string
+  garantia: string
+  condiciones: string
+  aceptacionCliente: string
   notasInternas: string
-  items: CotizacionItem[]
+  items: CommercialFormItem[]
 }
 
 interface CotizacionFormProps {
@@ -59,106 +65,134 @@ interface CotizacionFormProps {
     fechaVencimiento: string | null
     descuento: number
     iva: number
+    moneda?: string
+    vendedor?: string | null
+    formaPago?: string | null
+    tiempoEntrega?: string | null
     observaciones: string | null
+    garantia?: string | null
+    condiciones?: string | null
+    aceptacionCliente?: string | null
     notasInternas: string | null
-    items: { descripcion: string; cantidad: number; precioUnit: number }[]
+    items: Partial<CommercialFormItem>[]
   } | null
   onSuccess: () => void
 }
+
+const FORMA_PAGO_OPTIONS = [
+  { value: 'contado', label: 'Contado' },
+  { value: 'anticipo_50', label: '50% anticipo, 50% entrega' },
+  { value: 'anticipo_saldo', label: 'Anticipo y saldo contra entrega' },
+  { value: 'credito_15', label: 'Credito 15 dias' },
+  { value: 'credito_30', label: 'Credito 30 dias' },
+]
+
+const DELIVERY_OPTIONS = ['15 dias habiles', '30 dias habiles', 'Contra disponibilidad']
+
+const addDays = (dateValue: string, days: number) => {
+  const date = new Date(`${dateValue || new Date().toISOString().split('T')[0]}T00:00:00`)
+  date.setDate(date.getDate() + days)
+  return date.toISOString().split('T')[0]
+}
+
+const normalizeItem = (item: Partial<CommercialFormItem>): CommercialFormItem => ({
+  ...emptyCommercialItem,
+  ...item,
+  nombre: item.nombre || item.descripcion || '',
+  descripcion: item.descripcion || item.nombre || '',
+  descripcionLarga: item.descripcionLarga || '',
+  sku: item.sku || '',
+  unidad: item.unidad || 'unidad',
+  descuento: item.descuento ?? 0,
+  ivaTipo: 'NO_RESPONSABLE',
+  ivaPorcentaje: 0,
+})
 
 const emptyForm: CotizacionFormData = {
   clienteId: '',
   fechaEmision: new Date().toISOString().split('T')[0],
   fechaVencimiento: '',
   descuento: 0,
-  iva: 19,
+  iva: 0,
+  moneda: 'COP',
+  vendedor: 'Jesus Andres',
+  formaPago: 'anticipo_50',
+  tiempoEntrega: '',
   observaciones: '',
+  garantia: '',
+  condiciones: '',
+  aceptacionCliente: '',
   notasInternas: '',
-  items: [{ descripcion: '', cantidad: 1, precioUnit: 0 }],
+  items: [{ ...emptyCommercialItem }],
 }
 
-export function CotizacionForm({ open, onOpenChange, defaultClienteId, cotizacion, onSuccess }: CotizacionFormProps) {
+export function CotizacionForm({
+  open,
+  onOpenChange,
+  defaultClienteId,
+  cotizacion,
+  onSuccess,
+}: CotizacionFormProps) {
   const { user } = useAuthStore()
   const [clientes, setClientes] = useState<ClienteOption[]>([])
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState<CotizacionFormData>(emptyForm)
 
+  const setValidityDays = (days: number) => {
+    setForm((current) => ({
+      ...current,
+      fechaVencimiento: addDays(current.fechaEmision, days),
+    }))
+  }
+
   useEffect(() => {
-    if (open) {
-      fetchClientes()
-      if (cotizacion) {
-        setForm({
-          clienteId: cotizacion.clienteId,
-          fechaEmision: new Date(cotizacion.fechaEmision).toISOString().split('T')[0],
-          fechaVencimiento: cotizacion.fechaVencimiento
-            ? new Date(cotizacion.fechaVencimiento).toISOString().split('T')[0]
-            : '',
-          descuento: cotizacion.descuento,
-          iva: cotizacion.iva,
-          observaciones: cotizacion.observaciones ?? '',
-          notasInternas: cotizacion.notasInternas ?? '',
-          items: cotizacion.items.map((i) => ({
-            descripcion: i.descripcion,
-            cantidad: i.cantidad,
-            precioUnit: i.precioUnit,
-          })),
-        })
-      } else {
-        setForm({
-          ...emptyForm,
-          clienteId: defaultClienteId || '',
-        })
-      }
+    if (!open) return
+
+    fetch('/api/clientes')
+      .then((res) => res.json())
+      .then(setClientes)
+      .catch(() => toast.error('Error al cargar clientes'))
+
+    if (cotizacion) {
+      setForm({
+        clienteId: cotizacion.clienteId,
+        fechaEmision: new Date(cotizacion.fechaEmision).toISOString().split('T')[0],
+        fechaVencimiento: cotizacion.fechaVencimiento
+          ? new Date(cotizacion.fechaVencimiento).toISOString().split('T')[0]
+          : '',
+        descuento: cotizacion.descuento,
+        iva: 0,
+        moneda: cotizacion.moneda || 'COP',
+        vendedor: cotizacion.vendedor || user?.nombre || 'Jesus Andres',
+        formaPago: cotizacion.formaPago || 'anticipo_50',
+        tiempoEntrega: cotizacion.tiempoEntrega || '',
+        observaciones: cotizacion.observaciones || '',
+        garantia: cotizacion.garantia || '',
+        condiciones: cotizacion.condiciones || '',
+        aceptacionCliente: cotizacion.aceptacionCliente || '',
+        notasInternas: cotizacion.notasInternas || '',
+        items: cotizacion.items.map(normalizeItem),
+      })
+    } else {
+      setForm({
+        ...emptyForm,
+        clienteId: defaultClienteId || '',
+        vendedor: user?.nombre || 'Jesus Andres',
+      })
     }
-  }, [open, cotizacion, defaultClienteId])
-
-  const fetchClientes = async () => {
-    try {
-      const res = await fetch('/api/clientes')
-      if (res.ok) {
-        const data = await res.json()
-        setClientes(data)
-      }
-    } catch {
-      toast.error('Error al cargar clientes')
-    }
-  }
-
-  const subtotalGeneral = form.items.reduce(
-    (sum, item) => sum + item.cantidad * item.precioUnit,
-    0
-  )
-  const descuentoMonto = subtotalGeneral * (form.descuento / 100)
-  const subtotalConDescuento = subtotalGeneral - descuentoMonto
-  const ivaMonto = subtotalConDescuento * (form.iva / 100)
-  const total = subtotalConDescuento + ivaMonto
-
-  const handleItemChange = (index: number, field: keyof CotizacionItem, value: string | number) => {
-    const newItems = [...form.items]
-    newItems[index] = { ...newItems[index], [field]: value }
-    setForm({ ...form, items: newItems })
-  }
-
-  const addItem = () => {
-    setForm({ ...form, items: [...form.items, { descripcion: '', cantidad: 1, precioUnit: 0 }] })
-  }
-
-  const removeItem = (index: number) => {
-    if (form.items.length <= 1) return
-    setForm({ ...form, items: form.items.filter((_, i) => i !== index) })
-  }
+  }, [open, cotizacion, defaultClienteId, user?.nombre])
 
   const handleSubmit = async () => {
     if (!form.clienteId) {
-      toast.error('Seleccione un cliente')
+      toast.error('Seleccione un cliente para la cotizacion')
       return
     }
-    if (!form.items.length || form.items.some((i) => !i.descripcion)) {
-      toast.error('Agregue al menos un item con descripción')
+    if (!form.items.length || form.items.some((item) => !item.nombre.trim() || item.cantidad <= 0)) {
+      toast.error('Cada producto debe tener nombre y cantidad mayor a 0')
       return
     }
-    if (form.items.some((i) => i.cantidad <= 0)) {
-      toast.error('Las cantidades deben ser mayores a 0')
+    if (form.items.some((item) => item.precioUnit < 0)) {
+      toast.error('El precio unitario no puede ser negativo')
       return
     }
 
@@ -168,37 +202,27 @@ export function CotizacionForm({ open, onOpenChange, defaultClienteId, cotizacio
         ...form,
         socio: user?.nombre ?? 'Sistema',
         items: form.items.map((item) => ({
-          descripcion: item.descripcion,
-          cantidad: item.cantidad,
-          precioUnit: item.precioUnit,
+          ...item,
+          descripcion: item.nombre,
         })),
       }
 
-      let res: Response
-      if (cotizacion) {
-        res = await fetch(`/api/cotizaciones/${cotizacion.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-      } else {
-        res = await fetch('/api/cotizaciones', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-      }
+      const res = await fetch(cotizacion ? `/api/cotizaciones/${cotizacion.id}` : '/api/cotizaciones', {
+        method: cotizacion ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Error al guardar')
+        throw new Error(data.error || 'Error al guardar cotizacion')
       }
 
-      toast.success(cotizacion ? 'Cotización actualizada' : 'Cotización creada')
+      toast.success(cotizacion ? 'Cotizacion actualizada' : 'Cotizacion creada')
       onOpenChange(false)
       onSuccess()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al guardar')
+      toast.error(error instanceof Error ? error.message : 'Error al guardar cotizacion')
     } finally {
       setLoading(false)
     }
@@ -206,21 +230,18 @@ export function CotizacionForm({ open, onOpenChange, defaultClienteId, cotizacio
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-6xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{cotizacion ? 'Editar Cotización' : 'Nueva Cotización'}</DialogTitle>
+          <DialogTitle>{cotizacion ? 'Editar cotizacion' : 'Nueva cotizacion'}</DialogTitle>
           <DialogDescription>
-            {cotizacion
-              ? 'Modifique los datos de la cotización'
-              : 'Complete los datos para crear una nueva cotización'}
+            Prepare una propuesta comercial con productos detallados, impuestos, condiciones y firma.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
-          {/* Cliente */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="clienteId">Cliente *</Label>
+        <div className="grid gap-5 py-2">
+          <div className="grid gap-4 rounded-md border p-4 lg:grid-cols-4">
+            <div className="space-y-2 lg:col-span-2">
+              <Label>Cliente *</Label>
               <Select
                 value={form.clienteId}
                 onValueChange={(value) => setForm({ ...form, clienteId: value })}
@@ -230,165 +251,153 @@ export function CotizacionForm({ open, onOpenChange, defaultClienteId, cotizacio
                   <SelectValue placeholder="Seleccionar cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientes.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.nombre} {c.empresa ? `(${c.empresa})` : ''}
+                  {clientes.map((cliente) => (
+                    <SelectItem key={cliente.id} value={cliente.id}>
+                      {cliente.nombre} {cliente.empresa ? `(${cliente.empresa})` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label htmlFor="fechaEmision">Fecha Emisión *</Label>
-                <Input
-                  id="fechaEmision"
-                  type="date"
-                  value={form.fechaEmision}
-                  onChange={(e) => setForm({ ...form, fechaEmision: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fechaVencimiento">Vencimiento</Label>
-                <Input
-                  id="fechaVencimiento"
-                  type="date"
-                  value={form.fechaVencimiento}
-                  onChange={(e) => setForm({ ...form, fechaVencimiento: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Items */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">Items</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                <Plus className="h-4 w-4 mr-1" />
-                Agregar
-              </Button>
-            </div>
-
             <div className="space-y-2">
-              {form.items.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-2 items-end"
-                >
-                  <div>
-                    {idx === 0 && <Label className="text-xs text-muted-foreground">Descripción</Label>}
-                    <Input
-                      placeholder="Descripción del item"
-                      value={item.descripcion}
-                      onChange={(e) => handleItemChange(idx, 'descripcion', e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                  <div>
-                    {idx === 0 && <Label className="text-xs text-muted-foreground">Cant.</Label>}
-                    <Input
-                      type="number"
-                      min={0.01}
-                      step="0.01"
-                      value={item.cantidad}
-                      onChange={(e) => handleItemChange(idx, 'cantidad', parseFloat(e.target.value) || 0)}
-                      className="h-9"
-                    />
-                  </div>
-                  <div>
-                    {idx === 0 && <Label className="text-xs text-muted-foreground">Precio Unit.</Label>}
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={item.precioUnit}
-                      onChange={(e) => handleItemChange(idx, 'precioUnit', parseFloat(e.target.value) || 0)}
-                      className="h-9"
-                    />
-                  </div>
-                  <div>
-                    {idx === 0 && <Label className="text-xs text-muted-foreground">Subtotal</Label>}
-                    <div className="h-9 px-3 flex items-center text-sm bg-muted rounded-md">
-                      {formatCOP(item.cantidad * item.precioUnit)}
-                    </div>
-                  </div>
-                  <div>
-                    {idx === 0 && <div className="h-5" />}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9"
-                      onClick={() => removeItem(idx)}
-                      disabled={form.items.length <= 1}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Descuento, IVA */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="descuento">Descuento (%)</Label>
+              <Label>Fecha emision *</Label>
               <Input
-                id="descuento"
+                type="date"
+                value={form.fechaEmision}
+                onChange={(event) => setForm({ ...form, fechaEmision: event.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Valida hasta</Label>
+              <Input
+                type="date"
+                value={form.fechaVencimiento}
+                onChange={(event) => setForm({ ...form, fechaVencimiento: event.target.value })}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setValidityDays(15)}>
+                  15 dias
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setValidityDays(30)}>
+                  30 dias
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, fechaVencimiento: '' })}>
+                  Omitir
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Tiempo de entrega</Label>
+              <Input
+                value={form.tiempoEntrega}
+                onChange={(event) => setForm({ ...form, tiempoEntrega: event.target.value })}
+                placeholder="15 dias habiles"
+              />
+              <div className="flex flex-wrap gap-2">
+                {DELIVERY_OPTIONS.map((option) => (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setForm({ ...form, tiempoEntrega: option })}
+                  >
+                    {option}
+                  </Button>
+                ))}
+                <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, tiempoEntrega: '' })}>
+                  Omitir
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Forma de pago</Label>
+              <Select value={form.formaPago} onValueChange={(value) => setForm({ ...form, formaPago: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORMA_PAGO_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Moneda</Label>
+              <Input value={form.moneda} onChange={(event) => setForm({ ...form, moneda: event.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Vendedor</Label>
+              <Input value={form.vendedor} onChange={(event) => setForm({ ...form, vendedor: event.target.value })} />
+            </div>
+          </div>
+
+          <CommercialItemsEditor
+            items={form.items}
+            descuentoGlobal={form.descuento}
+            defaultIva={form.iva}
+            onChange={(items) => setForm({ ...form, items })}
+          />
+
+          <div className="grid gap-4 rounded-md border p-4 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label>Descuento global (%)</Label>
+              <Input
                 type="number"
                 min={0}
                 max={100}
-                value={form.descuento}
-                onChange={(e) => setForm({ ...form, descuento: parseFloat(e.target.value) || 0 })}
+                value={numberInputValue(form.descuento)}
+                onChange={(event) => setForm({ ...form, descuento: parseNumberInput(event.target.value) })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="iva">IVA (%)</Label>
-              <Input
-                id="iva"
-                type="number"
-                min={0}
-                value={form.iva}
-                onChange={(e) => setForm({ ...form, iva: parseFloat(e.target.value) || 0 })}
+            <div className="space-y-2 lg:col-span-2">
+              <Label>Observaciones</Label>
+              <Textarea
+                value={form.observaciones}
+                onChange={(event) => setForm({ ...form, observaciones: event.target.value })}
+                rows={2}
+                placeholder="Notas visibles para el cliente."
               />
             </div>
-            <div className="space-y-2">
-              <Label>Subtotal</Label>
-              <div className="h-9 px-3 flex items-center text-sm bg-muted rounded-md">
-                {formatCOP(subtotalGeneral)}
-              </div>
+            <div className="space-y-2 lg:col-span-2">
+              <Label>Garantia</Label>
+              <Textarea
+                value={form.garantia}
+                onChange={(event) => setForm({ ...form, garantia: event.target.value })}
+                rows={3}
+                placeholder="Garantia, cobertura, exclusiones y vigencia."
+              />
             </div>
-            <div className="space-y-2">
-              <Label className="text-base font-bold">TOTAL</Label>
-              <div className="h-9 px-3 flex items-center text-sm font-bold bg-primary/10 rounded-md">
-                {formatCOP(total)}
-              </div>
+            <div className="space-y-2 lg:col-span-2">
+              <Label>Condiciones comerciales</Label>
+              <Textarea
+                value={form.condiciones}
+                onChange={(event) => setForm({ ...form, condiciones: event.target.value })}
+                rows={3}
+                placeholder="Alcance, instalacion, soporte, pagos y entrega."
+              />
             </div>
-          </div>
-
-          {/* Observaciones */}
-          <div className="space-y-2">
-            <Label htmlFor="observaciones">Observaciones</Label>
-            <Textarea
-              id="observaciones"
-              placeholder="Observaciones visibles para el cliente..."
-              value={form.observaciones}
-              onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
-              rows={2}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notasInternas">Notas Internas</Label>
-            <Textarea
-              id="notasInternas"
-              placeholder="Notas internas (no visibles para el cliente)..."
-              value={form.notasInternas}
-              onChange={(e) => setForm({ ...form, notasInternas: e.target.value })}
-              rows={2}
-            />
+            <div className="space-y-2 lg:col-span-2">
+              <Label>Aceptacion del cliente</Label>
+              <Textarea
+                value={form.aceptacionCliente}
+                onChange={(event) => setForm({ ...form, aceptacionCliente: event.target.value })}
+                rows={2}
+                placeholder="Texto de aceptacion, orden de compra o aprobacion."
+              />
+            </div>
+            <div className="space-y-2 lg:col-span-2">
+              <Label>Notas internas</Label>
+              <Textarea
+                value={form.notasInternas}
+                onChange={(event) => setForm({ ...form, notasInternas: event.target.value })}
+                rows={2}
+                placeholder="Notas no visibles para el cliente."
+              />
+            </div>
           </div>
         </div>
 
@@ -398,7 +407,7 @@ export function CotizacionForm({ open, onOpenChange, defaultClienteId, cotizacio
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {cotizacion ? 'Guardar Cambios' : 'Crear Cotización'}
+            {cotizacion ? 'Guardar cambios' : 'Crear cotizacion'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -28,6 +28,10 @@ export async function GET(
           include: { item: { select: { id: true, nombre: true, categoria: true, unidad: true, costoUnitario: true } } },
           orderBy: { fecha: 'desc' },
         },
+        facturas: {
+          include: { items: { orderBy: { orden: 'asc' } } },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     })
 
@@ -60,11 +64,14 @@ export async function PATCH(
       data: {
         ...(body.nombre !== undefined && { nombre: body.nombre }),
         ...(body.empresa !== undefined && { empresa: body.empresa || null }),
-        ...(body.contactoNombre !== undefined && { contactoNombre: body.contactoNombre }),
-        ...(body.telefono !== undefined && { telefono: body.telefono }),
+        ...(body.nit !== undefined && { nit: body.nit || null }),
+        ...(body.direccion !== undefined && { direccion: body.direccion || null }),
+        ...(body.contactoNombre !== undefined && { contactoNombre: body.contactoNombre || '' }),
+        ...(body.telefono !== undefined && { telefono: body.telefono || '' }),
         ...(body.email !== undefined && { email: body.email || null }),
         ...(body.ciudad !== undefined && { ciudad: body.ciudad }),
         ...(body.departamento !== undefined && { departamento: body.departamento }),
+        ...(body.pais !== undefined && { pais: body.pais || 'Colombia' }),
         ...(body.tipoNegocio !== undefined && { tipoNegocio: body.tipoNegocio }),
         ...(body.estado !== undefined && { estado: body.estado }),
         ...(body.socioResponsable !== undefined && { socioResponsable: body.socioResponsable }),

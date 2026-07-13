@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/lib/auth-store'
+import { numberInputValue, parseNumberInput } from '@/lib/numbers'
 import type { TipoMovimiento } from '@/types'
 import {
   Dialog,
@@ -159,8 +160,8 @@ export function MovimientoForm({ open, onOpenChange, itemId, itemName, onSuccess
             <Input
               id="cantidad"
               type="number"
-              value={cantidad}
-              onChange={(e) => setCantidad(Number(e.target.value))}
+              value={numberInputValue(cantidad)}
+              onChange={(e) => setCantidad(parseNumberInput(e.target.value))}
             />
           </div>
 
@@ -172,8 +173,8 @@ export function MovimientoForm({ open, onOpenChange, itemId, itemName, onSuccess
                   id="costo"
                   type="number"
                   min="0"
-                  value={costo}
-                  onChange={(e) => setCosto(Number(e.target.value))}
+                  value={numberInputValue(costo)}
+                  onChange={(e) => setCosto(parseNumberInput(e.target.value))}
                 />
               </div>
               <div className="grid gap-2">

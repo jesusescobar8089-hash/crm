@@ -21,11 +21,14 @@ model Cliente {
   id               String        @id @default(cuid())
   nombre           String
   empresa          String?
+  nit              String?
+  direccion        String?
   contactoNombre   String
   telefono         String
   email            String?
   ciudad           String
   departamento     String
+  pais             String        @default("Colombia")
   tipoNegocio      String
   estado           String        @default("COTIZADO")
   socioResponsable String
@@ -38,6 +41,8 @@ model Cliente {
   transacciones    Transaccion[]
   tareas           Tarea[]
   documentos       Documento[]
+  facturas         Factura[]
+  movimientosInventario MovimientoStock[]
 }
 
 model Interaccion {
@@ -63,11 +68,20 @@ model Cotizacion {
   estado           String          @default("BORRADOR")
   socio            String
   descuento        Float           @default(0)
-  iva              Float           @default(19)
+  iva              Float           @default(0)
+  moneda           String          @default("COP")
+  vendedor         String?
+  formaPago        String?
+  tiempoEntrega    String?
+  garantia         String?
+  condiciones      String?
+  aceptacionCliente String?
+  legalJson        String?
   observaciones    String?
   notasInternas    String?
   items            CotizacionItem[]
   documentos       Documento[]
+  facturas         Factura[]
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 }
@@ -77,10 +91,70 @@ model CotizacionItem {
   cotizacionId String
   cotizacion   Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
   descripcion  String
+  nombre       String?
+  descripcionLarga String?
+  sku          String?
+  unidad       String       @default("unidad")
   cantidad     Float
   precioUnit   Float
+  descuento    Float        @default(0)
+  ivaTipo      String       @default("NO_RESPONSABLE")
+  ivaPorcentaje Float       @default(0)
+  baseGravable Float        @default(0)
+  ivaMonto     Float        @default(0)
+  total        Float        @default(0)
   subtotal     Float
   orden        Int        @default(0)
+}
+
+model Factura {
+  id               String        @id @default(cuid())
+  numero           String        @unique
+  clienteId        String
+  cliente          Cliente       @relation(fields: [clienteId], references: [id])
+  cotizacionId     String?
+  cotizacion       Cotizacion?   @relation(fields: [cotizacionId], references: [id])
+  fechaEmision     DateTime
+  fechaVencimiento DateTime?
+  fechaPago        DateTime?
+  estado           String        @default("BORRADOR")
+  socio            String
+  descuento        Float         @default(0)
+  iva              Float         @default(0)
+  moneda           String        @default("COP")
+  vendedor         String?
+  formaPago        String?
+  garantia         String?
+  condiciones      String?
+  legalJson        String?
+  observaciones    String?
+  notasInternas    String?
+  metodoPago       String?
+  items            FacturaItem[]
+  documentos       Documento[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model FacturaItem {
+  id          String   @id @default(cuid())
+  facturaId   String
+  factura     Factura  @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+  descripcion String
+  nombre      String?
+  descripcionLarga String?
+  sku         String?
+  unidad      String   @default("unidad")
+  cantidad    Float
+  precioUnit  Float
+  descuento   Float    @default(0)
+  ivaTipo     String   @default("NO_RESPONSABLE")
+  ivaPorcentaje Float  @default(0)
+  baseGravable Float   @default(0)
+  ivaMonto    Float    @default(0)
+  total       Float    @default(0)
+  subtotal    Float
+  orden       Int      @default(0)
 }
 
 model Monitoreo {
@@ -134,6 +208,7 @@ model MovimientoStock {
   costo       Float?
   proveedor   String?
   clienteId   String?
+  cliente     Cliente?       @relation(fields: [clienteId], references: [id])
   descripcion String
   socio       String
   fecha       DateTime
@@ -183,6 +258,8 @@ model Documento {
   cotizacion     Cotizacion? @relation(fields: [cotizacionId], references: [id])
   monitoreoId    String?
   monitoreo      Monitoreo?  @relation(fields: [monitoreoId], references: [id])
+  facturaId      String?
+  factura        Factura?    @relation(fields: [facturaId], references: [id])
   socio          String
   fechaDocumento DateTime?
   tags           String?
@@ -197,4 +274,28 @@ model BitacoraEvento {
   entidadId String?
   detalle   String?
   createdAt DateTime @default(now())
+}
+
+model ConfiguracionComercial {
+  id                    String   @id @default("default")
+  logoUrl               String   @default("/brand/image2.png")
+  colorPrimario         String   @default("#428d73")
+  colorSecundario       String   @default("#5c9bc6")
+  razonSocial           String   @default("AgroEve")
+  nit                   String   @default("1007072083-6")
+  direccion             String   @default("")
+  ciudad                String   @default("")
+  telefono              String   @default("")
+  correo                String   @default("agroeve.contacto@gmail.com")
+  paginaWeb             String   @default("")
+  piePagina             String   @default("Documento generado por el sistema interno de AgroEve.")
+  informacionLegal      String   @default("Documento comercial preparado para operacion en Colombia. Integracion DIAN pendiente.")
+  informacionBancaria   String   @default("")
+  notasAutomaticas      String   @default("")
+  garantiaPredeterminada String  @default("Garantia sujeta a condiciones de instalacion, uso adecuado y alcance contratado.")
+  ivaPredeterminado     Float    @default(0)
+  moneda                String   @default("COP")
+  dianJson              String?
+  updatedAt             DateTime @updatedAt
+  createdAt             DateTime @default(now())
 }

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/lib/auth-store'
+import { OPERATOR_OPTIONS, PRIMARY_OPERATOR_ID } from '@/lib/operator'
+import { numberInputValue, parseNumberInput } from '@/lib/numbers'
 import type { TipoTransaccion } from '@/types'
 import {
   Dialog,
@@ -26,8 +27,8 @@ import {
 const TIPO_OPTIONS: { value: TipoTransaccion; label: string }[] = [
   { value: 'INGRESO', label: 'Ingreso' },
   { value: 'GASTO', label: 'Gasto' },
-  { value: 'APORTE_SOCIO', label: 'Aporte Socio' },
-  { value: 'RETIRO_SOCIO', label: 'Retiro Socio' },
+  { value: 'APORTE_SOCIO', label: 'Aporte del socio' },
+  { value: 'RETIRO_SOCIO', label: 'Retiro del socio' },
 ]
 
 const CATEGORIAS_INGRESO = [
@@ -39,6 +40,8 @@ const CATEGORIAS_INGRESO = [
 ]
 
 const CATEGORIAS_GASTO = [
+  { value: 'compartido', label: 'Gasto compartido' },
+  { value: 'operacion', label: 'Operación' },
   { value: 'componentes', label: 'Componentes' },
   { value: 'materiales', label: 'Materiales' },
   { value: 'transporte', label: 'Transporte' },
@@ -55,11 +58,6 @@ const METODOS_PAGO = [
   { value: 'otro', label: 'Otro' },
 ]
 
-const SOCIOS = [
-  { value: 'socioA', label: 'Carlos Méndez (Socio A)' },
-  { value: 'socioB', label: 'María López (Socio B)' },
-]
-
 interface TransaccionFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -68,12 +66,11 @@ interface TransaccionFormProps {
 }
 
 export function TransaccionForm({ open, onOpenChange, tipoInicial, onSuccess }: TransaccionFormProps) {
-  const { user } = useAuthStore()
   const [tipo, setTipo] = useState<TipoTransaccion>(tipoInicial || 'INGRESO')
   const [categoria, setCategoria] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [monto, setMonto] = useState<number>(0)
-  const [socio, setSocio] = useState('socioA')
+  const [socio, setSocio] = useState(PRIMARY_OPERATOR_ID)
   const [metodoPago, setMetodoPago] = useState('transferencia')
   const [clienteId, setClienteId] = useState('')
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0])
@@ -98,7 +95,7 @@ export function TransaccionForm({ open, onOpenChange, tipoInicial, onSuccess }: 
     setCategoria('')
     setDescripcion('')
     setMonto(0)
-    setSocio('socioA')
+    setSocio(PRIMARY_OPERATOR_ID)
     setMetodoPago('transferencia')
     setClienteId('')
     setFecha(new Date().toISOString().split('T')[0])
@@ -226,8 +223,8 @@ export function TransaccionForm({ open, onOpenChange, tipoInicial, onSuccess }: 
                 id="monto"
                 type="number"
                 min="0"
-                value={monto}
-                onChange={(e) => setMonto(Number(e.target.value))}
+                value={numberInputValue(monto)}
+                onChange={(e) => setMonto(parseNumberInput(e.target.value))}
               />
             </div>
             <div className="grid gap-2">
@@ -243,13 +240,13 @@ export function TransaccionForm({ open, onOpenChange, tipoInicial, onSuccess }: 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label>Socio</Label>
+              <Label>Responsable</Label>
               <Select value={socio} onValueChange={setSocio}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {SOCIOS.map((s) => (
+                  {OPERATOR_OPTIONS.map((s) => (
                     <SelectItem key={s.value} value={s.value}>
                       {s.label}
                     </SelectItem>
@@ -258,7 +255,7 @@ export function TransaccionForm({ open, onOpenChange, tipoInicial, onSuccess }: 
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Método de Pago</Label>
+              <Label>Método de pago</Label>
               <Select value={metodoPago} onValueChange={setMetodoPago}>
                 <SelectTrigger>
                   <SelectValue />

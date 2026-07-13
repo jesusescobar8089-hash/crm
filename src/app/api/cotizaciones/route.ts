@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { registrarBitacora } from '@/lib/bitacora'
+import { calculateTaxIncludedTotals } from '@/lib/totals'
+import { normalizeCommercialItem, type CommercialItemInput } from '@/lib/commercial-docs'
 
 // GET /api/cotizaciones - List all quotations with optional filters
 export async function GET(request: NextRequest) {
@@ -30,14 +32,8 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    // Calculate totals for each quotation
     const result = cotizaciones.map((cot) => {
-      const subtotalGeneral = cot.items.reduce((sum, item) => sum + item.subtotal, 0)
-      const descuentoMonto = subtotalGeneral * (cot.descuento / 100)
-      const subtotalConDescuento = subtotalGeneral - descuentoMonto
-      const ivaMonto = subtotalConDescuento * (cot.iva / 100)
-      const total = subtotalConDescuento + ivaMonto
-      return { ...cot, subtotalGeneral, descuentoMonto, subtotalConDescuento, ivaMonto, total }
+      return { ...cot, ...calculateTaxIncludedTotals(cot.items, cot.descuento, cot.iva) }
     })
 
     return NextResponse.json(result)
@@ -51,7 +47,25 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { clienteId, fechaEmision, fechaVencimiento, socio, descuento, iva, observaciones, notasInternas, items } = body
+    const {
+      clienteId,
+      fechaEmision,
+      fechaVencimiento,
+      socio,
+      descuento,
+      iva,
+      observaciones,
+      notasInternas,
+      moneda,
+      vendedor,
+      formaPago,
+      tiempoEntrega,
+      garantia,
+      condiciones,
+      aceptacionCliente,
+      legalJson,
+      items,
+    } = body
 
     if (!clienteId || !fechaEmision || !socio || !items?.length) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
@@ -78,17 +92,19 @@ export async function POST(request: NextRequest) {
         fechaVencimiento: fechaVencimiento ? new Date(fechaVencimiento) : null,
         socio,
         descuento: descuento ?? 0,
-        iva: iva ?? 19,
+        iva: iva ?? 0,
+        moneda: moneda ?? 'COP',
+        vendedor: vendedor ?? null,
+        formaPago: formaPago ?? null,
+        tiempoEntrega: tiempoEntrega ?? null,
+        garantia: garantia ?? null,
+        condiciones: condiciones ?? null,
+        aceptacionCliente: aceptacionCliente ?? null,
+        legalJson: legalJson ?? null,
         observaciones: observaciones ?? null,
         notasInternas: notasInternas ?? null,
         items: {
-          create: items.map((item: { descripcion: string; cantidad: number; precioUnit: number }, idx: number) => ({
-            descripcion: item.descripcion,
-            cantidad: item.cantidad,
-            precioUnit: item.precioUnit,
-            subtotal: item.cantidad * item.precioUnit,
-            orden: idx,
-          })),
+          create: items.map((item: CommercialItemInput, idx: number) => normalizeCommercialItem(item, idx, iva ?? 0)),
         },
       },
       include: {

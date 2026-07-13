@@ -46,6 +46,7 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { CotizacionForm } from '@/components/cotizaciones/cotizacion-form'
 import { formatCOP, formatFecha } from '@/lib/format'
 import { useAuthStore } from '@/lib/auth-store'
+import { getOperatorLabel } from '@/lib/operator'
 import {
   ESTADO_COTIZACION_LABELS,
   type EstadoCotizacion,
@@ -61,6 +62,13 @@ interface CotizacionDetail {
   socio: string
   descuento: number
   iva: number
+  moneda: string
+  vendedor: string | null
+  formaPago: string | null
+  tiempoEntrega: string | null
+  garantia: string | null
+  condiciones: string | null
+  aceptacionCliente: string | null
   observaciones: string | null
   notasInternas: string | null
   cliente: {
@@ -75,14 +83,22 @@ interface CotizacionDetail {
   items: {
     id: string
     descripcion: string
+    nombre: string | null
+    descripcionLarga: string | null
+    sku: string | null
+    unidad: string
     cantidad: number
     precioUnit: number
+    descuento: number
+    ivaTipo: string
+    ivaPorcentaje: number
     subtotal: number
     orden: number
   }[]
   subtotalGeneral: number
   descuentoMonto: number
   subtotalConDescuento: number
+  baseGravable: number
   ivaMonto: number
   total: number
 }
@@ -287,9 +303,9 @@ export default function CotizacionDetailPage() {
                 <Copy className="h-4 w-4 mr-2" />
                 Duplicar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.open(`/api/cotizaciones/${id}/pdf`, '_blank')}>
+              <DropdownMenuItem onClick={() => window.open(`/api/cotizaciones/${id}/pdf?preview=1`, '_blank')}>
                 <Download className="h-4 w-4 mr-2" />
-                Descargar PDF
+                Previsualizar PDF
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -337,7 +353,7 @@ export default function CotizacionDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Socio</p>
-                  <p>{cotizacion.socio}</p>
+                  <p>{getOperatorLabel(cotizacion.socio)}</p>
                 </div>
               </div>
             </CardContent>
@@ -354,7 +370,7 @@ export default function CotizacionDetailPage() {
                   <TableRow>
                     <TableHead>Descripción</TableHead>
                     <TableHead className="text-right">Cantidad</TableHead>
-                    <TableHead className="text-right">Precio Unit.</TableHead>
+                    <TableHead className="text-right">Precio unit.</TableHead>
                     <TableHead className="text-right">Subtotal</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -384,10 +400,6 @@ export default function CotizacionDetailPage() {
                     <span className="text-red-500">-{formatCOP(cotizacion.descuentoMonto)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">IVA ({cotizacion.iva}%)</span>
-                  <span>{formatCOP(cotizacion.ivaMonto)}</span>
-                </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>TOTAL</span>
@@ -494,10 +506,10 @@ export default function CotizacionDetailPage() {
               <Button
                 variant="outline"
                 className="w-full justify-start"
-                onClick={() => window.open(`/api/cotizaciones/${id}/pdf`, '_blank')}
+                onClick={() => window.open(`/api/cotizaciones/${id}/pdf?preview=1`, '_blank')}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Descargar PDF
+                Previsualizar PDF
               </Button>
               <Separator />
               <Button
@@ -525,12 +537,26 @@ export default function CotizacionDetailPage() {
             fechaVencimiento: cotizacion.fechaVencimiento,
             descuento: cotizacion.descuento,
             iva: cotizacion.iva,
+            moneda: cotizacion.moneda,
+            vendedor: cotizacion.vendedor,
+            formaPago: cotizacion.formaPago,
+            tiempoEntrega: cotizacion.tiempoEntrega,
+            garantia: cotizacion.garantia,
+            condiciones: cotizacion.condiciones,
+            aceptacionCliente: cotizacion.aceptacionCliente,
             observaciones: cotizacion.observaciones,
             notasInternas: cotizacion.notasInternas,
             items: cotizacion.items.map((i) => ({
+              nombre: i.nombre || i.descripcion,
               descripcion: i.descripcion,
+              descripcionLarga: i.descripcionLarga || '',
+              sku: i.sku || '',
+              unidad: i.unidad || 'unidad',
               cantidad: i.cantidad,
               precioUnit: i.precioUnit,
+              descuento: i.descuento || 0,
+              ivaTipo: 'NO_RESPONSABLE',
+              ivaPorcentaje: 0,
             })),
           }}
           onSuccess={fetchCotizacion}

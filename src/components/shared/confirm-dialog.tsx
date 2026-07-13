@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,7 @@ interface ConfirmDialogProps {
   cancelText?: string
   onConfirm: () => void
   variant?: 'default' | 'destructive'
+  children?: ReactNode
 }
 
 export function ConfirmDialog({
@@ -31,6 +33,7 @@ export function ConfirmDialog({
   cancelText = 'Cancelar',
   onConfirm,
   variant = 'default',
+  children,
 }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -39,6 +42,7 @@ export function ConfirmDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelText}</AlertDialogCancel>
           <AlertDialogAction

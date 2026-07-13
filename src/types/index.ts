@@ -8,7 +8,8 @@ export type TipoMovimiento = 'ENTRADA' | 'SALIDA_INSTALACION' | 'SALIDA_VENTA' |
 export type TipoTransaccion = 'INGRESO' | 'GASTO' | 'APORTE_SOCIO' | 'RETIRO_SOCIO'
 export type EstadoTarea = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA'
 export type PrioridadTarea = 'ALTA' | 'MEDIA' | 'BAJA'
-export type TipoDocumento = 'CONTRATO' | 'COTIZACION' | 'MANUAL' | 'FOTOGRAFIA_INSTALACION' | 'ACTA_ENTREGA' | 'COMPROBANTE_PAGO' | 'OTRO'
+export type EstadoFactura = 'BORRADOR' | 'PENDIENTE' | 'EMITIDA' | 'PAGADA' | 'VENCIDA' | 'ANULADA'
+export type TipoDocumento = 'CONTRATO' | 'COTIZACION' | 'FACTURA' | 'MANUAL' | 'FOTOGRAFIA_INSTALACION' | 'ACTA_ENTREGA' | 'COMPROBANTE_PAGO' | 'OTRO'
 
 export const ESTADO_CLIENTE_COLORS: Record<EstadoCliente, string> = {
   COTIZADO: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -81,13 +82,32 @@ export const CATEGORIA_INVENTARIO_LABELS: Record<CategoriaInventario, string> = 
 export const TIPO_TRANSACCION_LABELS: Record<TipoTransaccion, string> = {
   INGRESO: 'Ingreso',
   GASTO: 'Gasto',
-  APORTE_SOCIO: 'Aporte Socio',
-  RETIRO_SOCIO: 'Retiro Socio',
+  APORTE_SOCIO: 'Aporte del socio',
+  RETIRO_SOCIO: 'Retiro del socio',
+}
+
+export const ESTADO_FACTURA_COLORS: Record<EstadoFactura, string> = {
+  BORRADOR: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+  PENDIENTE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  EMITIDA: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  PAGADA: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
+  VENCIDA: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  ANULADA: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+}
+
+export const ESTADO_FACTURA_LABELS: Record<EstadoFactura, string> = {
+  BORRADOR: 'Borrador',
+  PENDIENTE: 'Pendiente',
+  EMITIDA: 'Pendiente',
+  PAGADA: 'Pagada',
+  VENCIDA: 'Vencida',
+  ANULADA: 'Anulada',
 }
 
 export const TIPO_DOCUMENTO_LABELS: Record<TipoDocumento, string> = {
   CONTRATO: 'Contrato',
   COTIZACION: 'Cotización',
+  FACTURA: 'Factura',
   MANUAL: 'Manual',
   FOTOGRAFIA_INSTALACION: 'Fotografía Instalación',
   ACTA_ENTREGA: 'Acta de Entrega',
@@ -98,6 +118,7 @@ export const TIPO_DOCUMENTO_LABELS: Record<TipoDocumento, string> = {
 export const TIPO_DOCUMENTO_COLORS: Record<TipoDocumento, string> = {
   CONTRATO: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
   COTIZACION: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
+  FACTURA: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   MANUAL: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   FOTOGRAFIA_INSTALACION: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
   ACTA_ENTREGA: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',

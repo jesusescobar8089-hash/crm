@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { formatCOP, formatFecha } from '@/lib/format'
+import { getOperatorLabel } from '@/lib/operator'
 import { TIPO_TRANSACCION_LABELS, type TipoTransaccion } from '@/types'
 import { TransaccionForm } from '@/components/finanzas/transaccion-form'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
@@ -69,6 +70,10 @@ const CATEGORIA_INGRESO_LABELS: Record<string, string> = {
 }
 
 const CATEGORIA_GASTO_LABELS: Record<string, string> = {
+  compartido: 'Gasto compartido',
+  asignado_socio_a: 'Operación',
+  asignado_socio_b: 'Operación',
+  operacion: 'Operación',
   componentes: 'Componentes',
   materiales: 'Materiales',
   transporte: 'Transporte',
@@ -83,11 +88,6 @@ const METODO_PAGO_LABELS: Record<string, string> = {
   transferencia: 'Transferencia',
   tarjeta: 'Tarjeta',
   otro: 'Otro',
-}
-
-const SOCIOS_LABELS: Record<string, string> = {
-  socioA: 'Carlos Méndez',
-  socioB: 'María López',
 }
 
 const NOMBRES_MESES = [
@@ -109,6 +109,19 @@ interface ResumenData {
   chartMeses: { mes: string; ingresos: number; gastos: number }[]
   chartGastosCategoria: { categoria: string; monto: number }[]
   chartIngresosCategoria: { categoria: string; monto: number }[]
+  cierreMensual: {
+    ingresos: number
+    gastosOperativos: number
+    utilidadOperativa: number
+    utilidadPorSocio: number
+    socios: {
+      socio: string
+      gastosAsignados: number
+      aportes: number
+      retiros: number
+      saldoCierre: number
+    }[]
+  }
 }
 
 interface Transaccion {
@@ -256,6 +269,11 @@ export default function FinanzasPage() {
     )
   }
 
+  const margenMes = resumen.ingresosMes > 0 ? (resumen.utilidadMes / resumen.ingresosMes) * 100 : 0
+  const promedioIngreso = ingresos.length > 0 ? resumen.ingresosMes / ingresos.length : 0
+  const promedioGasto = gastos.length > 0 ? resumen.gastosMes / gastos.length : 0
+  const estadoOperacion = resumen.utilidadMes >= 0 ? 'Operacion rentable' : 'Mes en perdida'
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -268,7 +286,7 @@ export default function FinanzasPage() {
         </div>
         <Button onClick={() => { setTipoTransaccion('INGRESO'); setTransaccionFormOpen(true) }}>
           <Plus className="h-4 w-4 mr-2" />
-          Nueva Transacción
+          Nueva transacción
         </Button>
       </div>
 
@@ -277,7 +295,7 @@ export default function FinanzasPage() {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center gap-3">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground font-medium">Período:</span>
+            <span className="text-sm text-muted-foreground font-medium">Periodo:</span>
 
             <Select value={String(mesFiltro)} onValueChange={(v) => setMesFiltro(Number(v))}>
               <SelectTrigger className="w-36">
@@ -315,6 +333,49 @@ export default function FinanzasPage() {
             <span className="text-sm font-semibold ml-2">
               {NOMBRES_MESES[mesFiltro - 1]} {anioFiltro}
             </span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="grid gap-4 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="grid gap-3 sm:grid-cols-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Estado del mes</p>
+              <p className={`text-sm font-semibold ${resumen.utilidadMes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                {estadoOperacion}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Margen operativo</p>
+              <p className="text-sm font-semibold">{margenMes.toFixed(1)}%</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Ingreso promedio</p>
+              <p className="text-sm font-semibold">{formatCOP(promedioIngreso)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Gasto promedio</p>
+              <p className="text-sm font-semibold">{formatCOP(promedioGasto)}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => { setTipoTransaccion('INGRESO'); setTransaccionFormOpen(true) }}>
+              <ArrowUpCircle className="h-4 w-4 mr-2" />
+              Ingreso
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setTipoTransaccion('GASTO'); setTransaccionFormOpen(true) }}>
+              <ArrowDownCircle className="h-4 w-4 mr-2" />
+              Gasto
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setTipoTransaccion('APORTE_SOCIO'); setTransaccionFormOpen(true) }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Aporte
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setTipoTransaccion('RETIRO_SOCIO'); setTransaccionFormOpen(true) }}>
+              <TrendingDown className="h-4 w-4 mr-2" />
+              Retiro
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -391,19 +452,19 @@ export default function FinanzasPage() {
             </Card>
           </div>
 
-          {/* Balance por Socio */}
+          {/* Balance del socio principal */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Balance por Socio</CardTitle>
-              <CardDescription>Utilidad del año dividida 50/50</CardDescription>
+              <CardTitle className="text-base">Balance del socio principal</CardTitle>
+              <CardDescription>Utilidad completa y movimientos de capital consolidados</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {resumen.balanceSocios.map((bs) => (
                   <div key={bs.socio} className="bg-muted/50 rounded-lg p-4 space-y-2">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-sky-500" />
-                      <span className="font-medium">{SOCIOS_LABELS[bs.socio] || bs.socio}</span>
+                      <span className="font-medium">{getOperatorLabel(bs.socio)}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
@@ -420,11 +481,69 @@ export default function FinanzasPage() {
                       </div>
                     </div>
                     <div className="pt-2 border-t">
-                      <span className="text-xs text-muted-foreground">Utilidad correspondiente (50%)</span>
+                      <span className="text-xs text-muted-foreground">Utilidad correspondiente</span>
                       <p className="font-bold text-sky-600 dark:text-sky-400">{formatCOP(resumen.utilidadPorSocio)}</p>
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Reporte mensual de cierre operativo</CardTitle>
+              <CardDescription>
+                Ingresos, gastos, aportes y retiros consolidados para el socio principal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-md bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Ingresos del mes</p>
+                  <p className="mt-1 text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                    {formatCOP(resumen.cierreMensual.ingresos)}
+                  </p>
+                </div>
+                <div className="rounded-md bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Gastos operativos</p>
+                  <p className="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">
+                    {formatCOP(resumen.cierreMensual.gastosOperativos)}
+                  </p>
+                </div>
+                <div className="rounded-md bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Utilidad del socio principal</p>
+                  <p className="mt-1 text-lg font-semibold text-sky-600 dark:text-sky-400">
+                    {formatCOP(resumen.cierreMensual.utilidadPorSocio)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Responsable</TableHead>
+                      <TableHead className="text-right">Gastos operativos</TableHead>
+                      <TableHead className="text-right">Aportes</TableHead>
+                      <TableHead className="text-right">Retiros</TableHead>
+                      <TableHead className="text-right">Saldo de cierre</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {resumen.cierreMensual.socios.map((item) => (
+                      <TableRow key={item.socio}>
+                        <TableCell className="font-medium">{getOperatorLabel(item.socio)}</TableCell>
+                        <TableCell className="text-right text-red-600 dark:text-red-400">{formatCOP(item.gastosAsignados)}</TableCell>
+                        <TableCell className="text-right text-emerald-600 dark:text-emerald-400">{formatCOP(item.aportes)}</TableCell>
+                        <TableCell className="text-right text-red-600 dark:text-red-400">{formatCOP(item.retiros)}</TableCell>
+                        <TableCell className={`text-right font-semibold ${item.saldoCierre >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {formatCOP(item.saldoCierre)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -564,7 +683,7 @@ export default function FinanzasPage() {
                   <TableHead>Descripción</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
                   <TableHead className="hidden sm:table-cell">Método</TableHead>
-                  <TableHead className="hidden lg:table-cell">Socio</TableHead>
+                  <TableHead className="hidden lg:table-cell">Responsable</TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -595,7 +714,7 @@ export default function FinanzasPage() {
                         {METODO_PAGO_LABELS[t.metodoPago || ''] || t.metodoPago}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
-                        {SOCIOS_LABELS[t.socio] || t.socio}
+                        {getOperatorLabel(t.socio)}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -649,7 +768,7 @@ export default function FinanzasPage() {
                   <TableHead>Categoría</TableHead>
                   <TableHead>Descripción</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
-                  <TableHead className="hidden sm:table-cell">Socio</TableHead>
+                  <TableHead className="hidden sm:table-cell">Responsable</TableHead>
                   <TableHead className="hidden md:table-cell">Comprobante</TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
@@ -675,7 +794,7 @@ export default function FinanzasPage() {
                         {formatCOP(t.monto)}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        {SOCIOS_LABELS[t.socio] || t.socio}
+                        {getOperatorLabel(t.socio)}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         {METODO_PAGO_LABELS[t.metodoPago || ''] || t.metodoPago || '—'}
@@ -709,7 +828,7 @@ export default function FinanzasPage() {
         {/* TAB: APORTES/RETIROS */}
         <TabsContent value="aportes" className="space-y-4 mt-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <h3 className="text-lg font-semibold">Aportes y Retiros de Socios</h3>
+            <h3 className="text-lg font-semibold">Aportes y retiros del socio principal</h3>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => { setTipoTransaccion('APORTE_SOCIO'); setTransaccionFormOpen(true) }}>
                 <ArrowUpCircle className="h-4 w-4 mr-2 text-emerald-500" />
@@ -728,7 +847,7 @@ export default function FinanzasPage() {
                 <TableRow>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Socio</TableHead>
+                  <TableHead>Responsable</TableHead>
                   <TableHead>Concepto</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
                   <TableHead className="hidden sm:table-cell">Método</TableHead>
@@ -758,7 +877,7 @@ export default function FinanzasPage() {
                           {TIPO_TRANSACCION_LABELS[t.tipo as keyof typeof TIPO_TRANSACCION_LABELS] || t.tipo}
                         </Badge>
                       </TableCell>
-                      <TableCell>{SOCIOS_LABELS[t.socio] || t.socio}</TableCell>
+                      <TableCell>{getOperatorLabel(t.socio)}</TableCell>
                       <TableCell className="max-w-48 truncate">{t.descripcion}</TableCell>
                       <TableCell className={`text-right font-medium ${
                         t.tipo === 'APORTE_SOCIO'

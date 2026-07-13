@@ -18,11 +18,14 @@ export async function GET(request: NextRequest) {
         id: true,
         nombre: true,
         empresa: true,
+        nit: true,
+        direccion: true,
         contactoNombre: true,
         telefono: true,
         email: true,
         ciudad: true,
         departamento: true,
+        pais: true,
         tipoNegocio: true,
         estado: true,
         socioResponsable: true,
@@ -46,18 +49,21 @@ export async function POST(request: NextRequest) {
     const {
       nombre,
       empresa,
+      nit,
+      direccion,
       contactoNombre,
       telefono,
       email,
       ciudad,
       departamento,
+      pais,
       tipoNegocio,
       estado,
       socioResponsable,
       notas,
     } = body
 
-    if (!nombre || !contactoNombre || !telefono || !ciudad || !departamento || !tipoNegocio || !estado || !socioResponsable) {
+    if (!nombre || !ciudad || !departamento || !tipoNegocio || !estado || !socioResponsable) {
       return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 })
     }
 
@@ -65,11 +71,14 @@ export async function POST(request: NextRequest) {
       data: {
         nombre,
         empresa: empresa || null,
-        contactoNombre,
-        telefono,
+        nit: nit || null,
+        direccion: direccion || null,
+        contactoNombre: contactoNombre || '',
+        telefono: telefono || '',
         email: email || null,
         ciudad,
         departamento,
+        pais: pais || 'Colombia',
         tipoNegocio,
         estado,
         socioResponsable,

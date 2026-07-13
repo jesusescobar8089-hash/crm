@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { formatFecha } from '@/lib/format'
+import { getOperatorLabel } from '@/lib/operator'
 import { TIPO_DOCUMENTO_LABELS, TIPO_DOCUMENTO_COLORS, type TipoDocumento } from '@/types'
 import { useAuthStore } from '@/lib/auth-store'
 import { DocumentoUploader } from '@/components/documentos/documento-uploader'
@@ -37,6 +38,7 @@ import {
   Plus,
   Search,
   Download,
+  Eye,
   Trash2,
   FileText,
   FileIcon,
@@ -92,7 +94,9 @@ export default function DocumentosPage() {
   // Dialogs
   const [uploaderOpen, setUploaderOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState<Documento | null>(null)
+  const [previewDoc, setPreviewDoc] = useState<Documento | null>(null)
   const [deleteDialog, setDeleteDialog] = useState(false)
   const [deleteDoc, setDeleteDoc] = useState<Documento | null>(null)
 
@@ -154,8 +158,19 @@ export default function DocumentosPage() {
     }
   }
 
-  const handleDownload = (doc: Documento) => {
+  const getPreviewUrl = (doc: Documento) => `/api/documentos/${doc.id}/descargar?preview=1`
+
+  const canPreview = (doc: Documento) => (
+    doc.mimeType === 'application/pdf' || doc.mimeType.startsWith('image/')
+  )
+
+  const downloadDocument = (doc: Documento) => {
     window.open(`/api/documentos/${doc.id}/descargar`, '_blank')
+  }
+
+  const handleDownload = (doc: Documento) => {
+    setPreviewDoc(doc)
+    setPreviewOpen(true)
   }
 
   const handleRowClick = (doc: Documento) => {
@@ -365,7 +380,7 @@ export default function DocumentosPage() {
                     {doc.fechaDocumento ? formatFecha(doc.fechaDocumento) : '—'}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                    {doc.socio}
+                    {getOperatorLabel(doc.socio)}
                   </TableCell>
                   <TableCell className="text-right hidden sm:table-cell text-sm text-muted-foreground">
                     {formatFileSize(doc.tamañoBytes)}
@@ -377,9 +392,9 @@ export default function DocumentosPage() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => handleDownload(doc)}
-                        title="Descargar"
+                        title="Previsualizar"
                       >
-                        <Download className="h-4 w-4" />
+                        <Eye className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -444,7 +459,7 @@ export default function DocumentosPage() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Socio</span>
-                  <p className="font-medium">{selectedDoc.socio}</p>
+                  <p className="font-medium">{getOperatorLabel(selectedDoc.socio)}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Fecha Documento</span>
@@ -480,8 +495,8 @@ export default function DocumentosPage() {
 
               <div className="flex gap-2 pt-2">
                 <Button onClick={() => handleDownload(selectedDoc)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Descargar
+                  <Eye className="h-4 w-4 mr-2" />
+                  Previsualizar
                 </Button>
                 <Button
                   variant="outline"
@@ -498,6 +513,56 @@ export default function DocumentosPage() {
                 <Button variant="outline" onClick={() => setDetailOpen(false)}>
                   <X className="h-4 w-4 mr-2" />
                   Cerrar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-5xl max-h-[92vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileIcon className="h-5 w-5 text-sky-500" />
+              {previewDoc?.nombre}
+            </DialogTitle>
+          </DialogHeader>
+          {previewDoc && (
+            <div className="space-y-4">
+              {canPreview(previewDoc) ? (
+                <div className="overflow-hidden rounded-md border bg-muted/30">
+                  {previewDoc.mimeType.startsWith('image/') ? (
+                    <img
+                      src={getPreviewUrl(previewDoc)}
+                      alt={previewDoc.nombre}
+                      className="h-[70vh] w-full object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      title={`Vista previa de ${previewDoc.nombre}`}
+                      src={getPreviewUrl(previewDoc)}
+                      className="h-[70vh] w-full"
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-md border bg-muted/30 p-8 text-center">
+                  <FileIcon className="mx-auto h-10 w-10 text-muted-foreground" />
+                  <p className="mt-3 font-medium">Vista previa no disponible para este tipo de archivo.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Puede descargarlo para abrirlo con la aplicacion correspondiente.
+                  </p>
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+                  Cerrar
+                </Button>
+                <Button onClick={() => downloadDocument(previewDoc)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Descargar archivo
                 </Button>
               </div>
             </div>

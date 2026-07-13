@@ -113,7 +113,7 @@ export async function GET() {
     // --- CHARTS ---
     // Ingresos vs Gastos last 6 months
     const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-    const ingresosGastosData = []
+    const ingresosGastosData: { mes: string; ingresos: number; gastos: number }[] = []
     for (let i = 5; i >= 0; i--) {
       const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
@@ -157,7 +157,7 @@ export async function GET() {
     }))
 
     // Cotizaciones enviadas vs aceptadas vs perdidas por mes
-    const cotizacionesPorMesData = []
+    const cotizacionesPorMesData: { mes: string; enviadas: number; aceptadas: number; perdidas: number }[] = []
     for (let i = 5; i >= 0; i--) {
       const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,22 +9,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { EstadoCliente, TipoNegocio } from '@/types'
 import { ESTADO_CLIENTE_LABELS } from '@/types'
+import { OPERATOR_OPTIONS, PRIMARY_OPERATOR_ID, getOperatorValue } from '@/lib/operator'
 
 const clienteSchema = z.object({
   nombre: z.string().min(1, 'El nombre es obligatorio'),
   empresa: z.string().optional(),
-  contactoNombre: z.string().min(1, 'El nombre de contacto es obligatorio'),
-  telefono: z.string().min(1, 'El teléfono es obligatorio'),
+  nit: z.string().optional(),
+  direccion: z.string().optional(),
+  contactoNombre: z.string().optional(),
+  telefono: z.string().optional(),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   ciudad: z.string().min(1, 'La ciudad es obligatoria'),
   departamento: z.string().min(1, 'El departamento es obligatorio'),
+  pais: z.string().optional(),
   tipoNegocio: z.string().min(1, 'El tipo de negocio es obligatorio'),
   estado: z.string().min(1, 'El estado es obligatorio'),
-  socioResponsable: z.string().min(1, 'El socio responsable es obligatorio'),
+  socioResponsable: z.string().min(1, 'El responsable es obligatorio'),
   notas: z.string().optional(),
 })
 
@@ -34,11 +39,14 @@ interface Cliente {
   id: string
   nombre: string
   empresa: string | null
+  nit: string | null
+  direccion: string | null
   contactoNombre: string
   telefono: string
   email: string | null
   ciudad: string
   departamento: string
+  pais: string | null
   tipoNegocio: string
   estado: string
   socioResponsable: string
@@ -62,51 +70,69 @@ const TIPOS_NEGOCIO: { value: TipoNegocio; label: string }[] = [
 
 export function ClienteForm({ open, onOpenChange, cliente, onSuccess }: ClienteFormProps) {
   const isEditing = !!cliente
+  const [includeContacto, setIncludeContacto] = useState(false)
+  const [includeTelefono, setIncludeTelefono] = useState(false)
+  const [includeEmail, setIncludeEmail] = useState(false)
 
   const form = useForm<ClienteFormValues>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
       nombre: '',
       empresa: '',
+      nit: '',
+      direccion: '',
       contactoNombre: '',
       telefono: '',
       email: '',
       ciudad: '',
       departamento: '',
+      pais: 'Colombia',
       tipoNegocio: 'piscicultura',
       estado: 'COTIZADO',
-      socioResponsable: 'socioA',
+      socioResponsable: PRIMARY_OPERATOR_ID,
       notas: '',
     },
   })
 
   useEffect(() => {
     if (cliente) {
+      setIncludeContacto(Boolean(cliente.contactoNombre))
+      setIncludeTelefono(Boolean(cliente.telefono))
+      setIncludeEmail(Boolean(cliente.email))
       form.reset({
         nombre: cliente.nombre,
         empresa: cliente.empresa ?? '',
+        nit: cliente.nit ?? '',
+        direccion: cliente.direccion ?? '',
         contactoNombre: cliente.contactoNombre,
         telefono: cliente.telefono,
         email: cliente.email ?? '',
         ciudad: cliente.ciudad,
         departamento: cliente.departamento,
+        pais: cliente.pais ?? 'Colombia',
         tipoNegocio: cliente.tipoNegocio as TipoNegocio,
         estado: cliente.estado as EstadoCliente,
-        socioResponsable: cliente.socioResponsable,
+        socioResponsable: getOperatorValue(cliente.socioResponsable),
         notas: cliente.notas ?? '',
       })
     } else {
+      setIncludeContacto(false)
+      setIncludeTelefono(false)
+      setIncludeEmail(false)
       form.reset({
         nombre: '',
         empresa: '',
+        nit: '',
+        direccion: '',
         contactoNombre: '',
         telefono: '',
         email: '',
         ciudad: '',
         departamento: '',
+        pais: 'Colombia',
         tipoNegocio: 'piscicultura',
         estado: 'COTIZADO',
-        socioResponsable: 'socioA',
+        socioResponsable: PRIMARY_OPERATOR_ID,
         notas: '',
       })
     }
@@ -177,12 +203,12 @@ export function ClienteForm({ open, onOpenChange, cliente, onSuccess }: ClienteF
               />
               <FormField
                 control={form.control}
-                name="contactoNombre"
+                name="nit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre de Contacto *</FormLabel>
+                    <FormLabel>NIT / Cedula</FormLabel>
                     <FormControl>
-                      <Input placeholder="Persona de contacto" {...field} />
+                      <Input placeholder="Identificacion fiscal" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -190,30 +216,105 @@ export function ClienteForm({ open, onOpenChange, cliente, onSuccess }: ClienteF
               />
               <FormField
                 control={form.control}
-                name="telefono"
+                name="direccion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Teléfono *</FormLabel>
+                    <FormLabel>Direccion</FormLabel>
                     <FormControl>
-                      <Input placeholder="3001234567" {...field} />
+                      <Input placeholder="Direccion comercial" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="correo@ejemplo.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-3 rounded-md border bg-muted/20 p-3 sm:col-span-2">
+                <div>
+                  <FormLabel>Datos de contacto opcionales</FormLabel>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Selecciona solo los datos que quieras guardar para este cliente.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={includeContacto}
+                      onCheckedChange={(checked) => {
+                        const enabled = checked === true
+                        setIncludeContacto(enabled)
+                        if (!enabled) form.setValue('contactoNombre', '')
+                      }}
+                    />
+                    Contacto
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={includeTelefono}
+                      onCheckedChange={(checked) => {
+                        const enabled = checked === true
+                        setIncludeTelefono(enabled)
+                        if (!enabled) form.setValue('telefono', '')
+                      }}
+                    />
+                    Telefono
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={includeEmail}
+                      onCheckedChange={(checked) => {
+                        const enabled = checked === true
+                        setIncludeEmail(enabled)
+                        if (!enabled) form.setValue('email', '')
+                      }}
+                    />
+                    Correo
+                  </label>
+                </div>
+              </div>
+              {includeContacto && (
+                <FormField
+                  control={form.control}
+                  name="contactoNombre"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nombre de Contacto</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Persona de contacto" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {includeTelefono && (
+                <FormField
+                  control={form.control}
+                  name="telefono"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefono</FormLabel>
+                      <FormControl>
+                        <Input placeholder="3001234567" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {includeEmail && (
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="correo@ejemplo.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="ciudad"
@@ -235,6 +336,19 @@ export function ClienteForm({ open, onOpenChange, cliente, onSuccess }: ClienteF
                     <FormLabel>Departamento *</FormLabel>
                     <FormControl>
                       <Input placeholder="Departamento" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="pais"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pais</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Colombia" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -293,7 +407,7 @@ export function ClienteForm({ open, onOpenChange, cliente, onSuccess }: ClienteF
                 name="socioResponsable"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Socio Responsable *</FormLabel>
+                    <FormLabel>Responsable operativo *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -301,8 +415,11 @@ export function ClienteForm({ open, onOpenChange, cliente, onSuccess }: ClienteF
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="socioA">Socio A</SelectItem>
-                        <SelectItem value="socioB">Socio B</SelectItem>
+                        {OPERATOR_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

@@ -5,11 +5,13 @@ import path from 'path'
 import { db } from '@/lib/db'
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
+    const { searchParams } = new URL(request.url)
+    const preview = searchParams.get('preview') === '1'
 
     const documento = await db.documento.findUnique({ where: { id } })
 
@@ -47,7 +49,10 @@ export async function GET(
 
     const headers = new Headers()
     headers.set('Content-Type', contentType)
-    headers.set('Content-Disposition', `attachment; filename="${encodeURIComponent(originalName)}"`)
+    headers.set(
+      'Content-Disposition',
+      `${preview ? 'inline' : 'attachment'}; filename="${encodeURIComponent(originalName)}"`
+    )
     headers.set('Content-Length', fileStat.size.toString())
 
     return new NextResponse(fileBuffer, { headers })
